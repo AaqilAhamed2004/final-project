@@ -26,7 +26,8 @@ export default function LoginPage() {
     }
   }, [selectedRole]);
 
-  const handleLogin = () => {
+  const handleLogin = (e) => {
+    if (e) e.preventDefault();
     setError('');
     const user = users.find(u => u.role === selectedRole && u.email === email && u.password === password);
     
@@ -90,7 +91,7 @@ export default function LoginPage() {
           </div>
 
           {/* Form */}
-          <div className="space-y-2">
+          <form className="space-y-2" onSubmit={handleLogin}>
             <Input 
               id="email"
               label="System Identity (Email)"
@@ -128,10 +129,10 @@ export default function LoginPage() {
               <label htmlFor="maintain_session" className="text-[9px] font-mono text-white/50 tracking-[0.1em] cursor-pointer">MAINTAIN SESSION AUTHORIZATION</label>
             </div>
 
-            <Button className="w-full py-3.5 text-sm tracking-widest mt-2" onClick={handleLogin}>
+            <Button type="submit" className="w-full py-3.5 text-sm tracking-widest mt-2">
               INITIALIZE ACCESS
             </Button>
-          </div>
+          </form>
 
           {/* Footer */}
           <div className="mt-8 text-center space-y-3">

@@ -1,8 +1,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Bell } from 'lucide-react';
+import { Bell, LogOut } from 'lucide-react';
 
-export default function Navbar({ title, user, badgeText, badgeColorClass, children }) {
+export default function Navbar({ title, user, badgeText, badgeColorClass, children, onLogout }) {
   return (
     <header className="h-20 border-b border-white/5 bg-[#0D0905] flex items-center justify-between px-8 sticky top-0 z-10 w-full">
       <div className="flex items-center gap-4">
@@ -44,6 +44,11 @@ export default function Navbar({ title, user, badgeText, badgeColorClass, childr
               <div className="text-sm font-sans">{user.name}</div>
             </div>
             <img src={user.avatar} alt="User Avatar" className="w-10 h-10 rounded border border-white/10 bg-[#1C1309]" />
+            {onLogout && (
+              <button onClick={onLogout} className="text-white/40 hover:text-aura-red transition-colors ml-2" title="Log out">
+                <LogOut size={18} />
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -60,4 +65,6 @@ Navbar.propTypes = {
   }),
   badgeText: PropTypes.string,
   badgeColorClass: PropTypes.string,
+  children: PropTypes.node,
+  onLogout: PropTypes.func,
 };

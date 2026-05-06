@@ -12,7 +12,7 @@ import { CheckCircle2, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 export default function DonorReliefBoard() {
-  const { currentUser } = useAuth();
+  const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const { filters, handleFilterChange, filteredRequests } = useRequestFilter(mockRequests);
   const [displayedCount, setDisplayedCount] = useState(8);
@@ -30,6 +30,11 @@ export default function DonorReliefBoard() {
     setSelectedRequest(null);
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   return (
     <div className="min-h-screen bg-aura-bg flex flex-col font-sans text-white">
       <Navbar 
@@ -39,6 +44,7 @@ export default function DonorReliefBoard() {
           // Fallback if avatar is missing
           avatar: currentUser.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Donor&backgroundColor=1C1309'
         } : null}
+        onLogout={handleLogout}
       >
         <span className="text-aura-amber border-b-2 border-aura-amber pb-1 cursor-pointer font-bold">Relief Board</span>
         <span className="hover:text-white cursor-pointer transition-colors">My Contributions</span>

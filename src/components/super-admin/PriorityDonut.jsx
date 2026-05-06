@@ -32,7 +32,7 @@ export default function PriorityDonut({ requests }) {
 
         <div className="w-full h-48 flex items-center justify-between pl-2 pr-6">
           <div className="w-40 h-40">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1}>
               <PieChart>
                 <Pie
                   data={data}

@@ -1,6 +1,0 @@
-@import "tailwindcss";
-@config "../tailwind.config.js";
-
-body {
-  @apply bg-aura-bg text-white font-sans antialiased;
-}

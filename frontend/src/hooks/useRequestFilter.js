@@ -17,15 +17,15 @@ export const useRequestFilter = (initialRequests) => {
       if (req.status === 'fulfilled' || req.status === 'cancelled') return false;
 
       // Handle old format fallback just in case
-      const reqPriority = req.prolog_analysis?.priority_level || req.priority;
-      const reqSupplyType = req.supply_type || req.supplyType;
-      const reqLocation = req.location_name || req.location;
+      const reqPriority = (req.prolog_analysis?.priority_level || req.priority || '').toLowerCase();
+      const reqSupplyType = (req.supply_type || req.supplyType || '').toLowerCase();
+      const reqLocation = (req.location_name || req.location || '').toLowerCase();
 
       if (filters.priority !== 'ALL' && reqPriority !== filters.priority.toLowerCase()) return false;
       if (filters.supplyType !== 'ALL' && reqSupplyType !== filters.supplyType.toLowerCase()) return false;
       
       // Basic location string matching
-      if (filters.location !== 'ALL' && !reqLocation.toLowerCase().includes(filters.location.toLowerCase())) {
+      if (filters.location !== 'ALL' && !reqLocation.includes(filters.location.toLowerCase())) {
         return false;
       }
 

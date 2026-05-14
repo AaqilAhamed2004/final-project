@@ -7,7 +7,12 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(localStorage.getItem('aura_token'))
   const [user, setUser] = useState(() => {
     const stored = localStorage.getItem('aura_user')
-    return stored ? JSON.parse(stored) : null
+    try {
+      return stored ? JSON.parse(stored) : null
+    } catch (e) {
+      console.error("Failed to parse aura_user from localStorage:", e)
+      return null
+    }
   })
 
   const login = (tokenValue, userData) => {

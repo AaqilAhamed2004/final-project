@@ -1,12 +1,12 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# 1. TEMPORARILY COMMENTED OUT UNTIL WE BUILD THEM:
-from .routers import auth, requests, inventory, logic, public
+# 1. Routers
+from app.routers import auth, requests, inventory, logic, public
 
 app = FastAPI(
     title="AURA API",
-    description="Automated Urgent Relief Allocation — FastAPI + MongoDB + SWI-Prolog",
+    description="Automated Urgent Relief Allocation - FastAPI + MongoDB + SWI-Prolog",
     version="1.0.0"
 )
 
@@ -18,7 +18,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 2. TEMPORARILY COMMENTED OUT UNTIL WE BUILD THEM:
+# 2. Register Routers
 app.include_router(auth.router,      prefix="/api/auth",      tags=["Authentication"])
 app.include_router(requests.router,  prefix="/api/requests",  tags=["Requests"])
 app.include_router(inventory.router, prefix="/api/inventory", tags=["Inventory"])

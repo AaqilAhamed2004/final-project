@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { getInventory, getAllRequests, addInventoryItem, deleteInventoryItem, updateInventoryItem } from '../api';
-import { intelFeed } from '../data/intelFeed';
 import Sidebar from '../components/common/Sidebar';
 import Navbar from '../components/common/Navbar';
 import KPIRow from '../components/super-admin/KPIRow';
@@ -149,7 +148,7 @@ export default function SuperAdminDashboard() {
 
               {/* Right Sidebar Column */}
               <div className="col-span-12 xl:col-span-4 flex flex-col">
-                <IntelStream intelData={intelFeed} />
+                <IntelStream supplies={supplies} requests={requests} />
               </div>
             </div>
 
@@ -158,7 +157,7 @@ export default function SuperAdminDashboard() {
                 <PriorityDonut requests={requests} />
               </div>
               <div className="col-span-12 md:col-span-6 xl:col-span-4">
-                <GlobalLogistics />
+                <GlobalLogistics requests={requests} />
               </div>
               <div className="col-span-12 xl:col-span-4 flex justify-end items-end pb-2">
                  <Button variant="secondary" className="w-full py-4 text-xs tracking-widest text-white/70 border-white/10 hover:border-white/30 bg-[#140D07] hover:bg-[#1A140F] hover:text-white transition-colors uppercase font-mono">

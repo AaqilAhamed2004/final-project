@@ -20,7 +20,6 @@ export default function AddSupplyModal({ isOpen, onClose, onAdd }) {
   const handleSubmit = () => {
     if (name && quantity) {
       onAdd({
-        id: `SR-${Math.floor(Math.random() * 9000) + 1000}`,
         name,
         category,
         quantity: parseInt(quantity, 10)

@@ -5,9 +5,12 @@ import { Package, AlertCircle, Users, ShieldCheck } from 'lucide-react';
 
 export default function KPIRow({ supplies, requests }) {
   // Compute data
-  const totalSupplyUnits = supplies.reduce((sum, item) => sum + item.quantity, 0);
-  const openRequestsCount = requests.filter(r => r.status !== 'DELIVERED').length;
-  const criticalCount = requests.filter(r => r.status !== 'DELIVERED' && r.priority === 'CRITICAL').length;
+  const totalSupplyUnits = supplies.reduce((sum, item) => sum + (item.quantity || 0), 0);
+  const openRequestsCount = requests.filter(r => r.status === 'pending').length;
+  const criticalCount = requests.filter(r => r.status === 'pending' && r.prolog_analysis?.priority_level === 'red').length;
+  
+  // Try to find unique officers from requests to give a rough estimate of active personnel
+  const uniqueOfficers = new Set(requests.map(r => r.gn_officer_id).filter(Boolean)).size;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
@@ -29,10 +32,10 @@ export default function KPIRow({ supplies, requests }) {
       />
       <StatCard 
         title="PERSONNEL ACTIVE" 
-        value="1,024"
+        value={Math.max(12, uniqueOfficers).toString()}
         icon={Users}
         trend="📍"
-        trendLabel="Deployed across 14 zones"
+        trendLabel="Deployed across active zones"
         colorClass="text-[#FF8A8A]"
       />
       <StatCard 

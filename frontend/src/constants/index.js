@@ -1,25 +1,25 @@
 export const ROLES = {
-  GN_OFFICER: 'GN_OFFICER',
-  DONOR: 'DONOR',
-  SUPER_ADMIN: 'SUPER_ADMIN',
+  GN_OFFICER: 'gn_officer',
+  DONOR: 'donor',
+  SUPER_ADMIN: 'super_admin',
 };
 
 export const PRIORITY_LEVELS = {
-  CRITICAL: 'CRITICAL',
-  MODERATE: 'MODERATE',
-  LOW: 'LOW',
+  RED: 'red',       // was CRITICAL
+  ORANGE: 'orange', // was MODERATE
+  YELLOW: 'yellow', // was LOW
 };
 
 export const SUPPLY_CATEGORIES = {
-  MEDICAL: 'MEDICAL',
-  FOOD: 'FOOD',
-  UTILITY: 'UTILITY',
-  SHELTER: 'SHELTER',
-  COMMUNICATION: 'COMMUNICATION',
+  MEDICINE: 'medicine',
+  FOOD: 'food',
+  SHELTER: 'shelter',
+  OTHER: 'other',
 };
 
 export const STATUS_TYPES = {
-  PENDING: 'PENDING',
-  ASSIGNED: 'ASSIGNED',
-  DELIVERED: 'DELIVERED',
+  PENDING: 'pending',
+  APPROVED: 'approved',     // was ASSIGNED
+  FULFILLED: 'fulfilled',   // was DELIVERED
+  CANCELLED: 'cancelled',   // new
 };

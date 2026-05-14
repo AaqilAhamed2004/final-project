@@ -7,28 +7,36 @@ import { MapPin } from 'lucide-react';
 import { formatRequestId } from '../../utils/priorityHelpers';
 
 export default function RequestCard({ request, onBook }) {
+  // Use _id for displaying, fallback to id for old mock data just in case
+  const reqId = request._id || request.id;
+  const itemName = request.supply_type || request.itemName;
+  const priority = request.prolog_analysis?.priority_level || request.priority;
+  const location = request.location_name || request.location;
+  const assignedOfficer = request.gn_officer_id || request.assignedOfficer || 'System';
+  const officerAvatar = request.officerAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${assignedOfficer}&backgroundColor=1C1309`;
+
   return (
     <Card className="flex flex-col justify-between h-full hover:border-aura-amber/50 transition-colors duration-300">
       <div>
         <div className="flex justify-between items-start mb-5">
-          <Badge priority={request.priority} />
-          <span className="text-white/50 text-[11px] font-mono font-bold tracking-widest">REQ {formatRequestId(request.id)}</span>
+          <Badge priority={priority} />
+          <span className="text-white/50 text-[11px] font-mono font-bold tracking-widest" title={reqId}>REQ {formatRequestId(reqId?.slice(-6) || 'N/A')}</span>
         </div>
         
-        <h3 className="text-[22px] font-bold font-sans mb-2 tracking-tight text-white/90 leading-tight">{request.itemName}</h3>
+        <h3 className="text-[22px] font-bold font-sans mb-2 tracking-tight text-white/90 leading-tight">{itemName}</h3>
         
         <div className="flex items-center gap-2 text-white/50 text-sm font-sans mb-8">
           <MapPin size={16} />
-          {request.location}
+          {location}
         </div>
       </div>
 
       <div className="mt-auto">
         <div className="flex items-center gap-4 mb-6">
-          <img src={request.officerAvatar} alt={request.assignedOfficer} className="w-10 h-10 rounded border border-white/10 bg-[#1C1309]" />
+          <img src={officerAvatar} alt={assignedOfficer} className="w-10 h-10 rounded border border-white/10 bg-[#1C1309]" />
           <div>
             <div className="text-[9px] font-mono tracking-widest uppercase text-white/50 mb-0.5">Assigned Officer</div>
-            <div className="text-sm font-sans text-white/90">GN Officer {request.assignedOfficer}</div>
+            <div className="text-sm font-sans text-white/90 truncate max-w-[120px]" title={assignedOfficer}>GN Officer {assignedOfficer.slice(-6)}</div>
           </div>
         </div>
 

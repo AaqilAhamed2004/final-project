@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { supplies as initialSupplies } from '../data/supplies';
-import { requests } from '../data/requests';
+import { getInventory, getAllRequests, addInventoryItem, deleteInventoryItem, updateInventoryItem } from '../api';
 import { intelFeed } from '../data/intelFeed';
 import Sidebar from '../components/common/Sidebar';
 import Navbar from '../components/common/Navbar';
@@ -18,8 +17,34 @@ import { LayoutDashboard, Package, FileStack, Truck, Users, Plus } from 'lucide-
 export default function SuperAdminDashboard() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
-  const [supplies, setSupplies] = useState(initialSupplies);
+  const [supplies, setSupplies] = useState([]);
+  const [requests, setRequests] = useState([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchData = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const [invData, reqData] = await Promise.all([
+        getInventory(),
+        getAllRequests()
+      ]);
+      setSupplies(invData);
+      setRequests(reqData);
+    } catch (err) {
+      setError(err.message || 'Failed to fetch dashboard data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+    const intervalId = setInterval(fetchData, 30000); // auto-refresh every 30s
+    return () => clearInterval(intervalId);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -34,16 +59,36 @@ export default function SuperAdminDashboard() {
     { path: '/users', label: 'User Management', icon: Users },
   ];
 
-  const handleAddSupply = (newSupply) => {
-    setSupplies([newSupply, ...supplies]);
+  const handleAddSupply = async (newSupplyData) => {
+    try {
+      await addInventoryItem({
+        item_name: newSupplyData.name,
+        category: newSupplyData.category,
+        quantity: parseInt(newSupplyData.quantity, 10),
+        unit: 'units'
+      });
+      fetchData(); // refresh
+    } catch (err) {
+      alert(err.message || 'Failed to add supply');
+    }
   };
 
-  const handleDeleteSupply = (supply) => {
-    setSupplies(supplies.filter(s => s.id !== supply.id));
+  const handleDeleteSupply = async (supply) => {
+    try {
+      await deleteInventoryItem(supply._id || supply.id);
+      fetchData(); // refresh
+    } catch (err) {
+      alert(err.message || 'Failed to delete supply');
+    }
   };
 
-  const handleEditSupply = (supply) => {
-    console.log('Edit supply', supply);
+  const handleEditSupply = async (supply, updatedFields) => {
+    try {
+      await updateInventoryItem(supply._id || supply.id, updatedFields);
+      fetchData(); // refresh
+    } catch (err) {
+      alert(err.message || 'Failed to update supply');
+    }
   };
 
   return (
@@ -65,13 +110,24 @@ export default function SuperAdminDashboard() {
         <main className="flex-1 p-8 overflow-y-auto">
           <div className="max-w-[1600px] mx-auto">
             
+            {error && (
+              <div className="bg-aura-red/20 border border-aura-red text-white p-4 rounded mb-6 font-mono text-sm">
+                SYSTEM ERROR: {error}
+              </div>
+            )}
+
             <KPIRow supplies={supplies} requests={requests} />
 
             <div className="grid grid-cols-12 gap-6 h-[500px] mb-6">
               {/* Main Column */}
               <div className="col-span-12 xl:col-span-8 flex flex-col gap-6">
                 {/* Inventory Panel */}
-                <div className="flex-1 flex flex-col border border-white/5 rounded-lg p-6 bg-[#140D07]">
+                <div className="flex-1 flex flex-col border border-white/5 rounded-lg p-6 bg-[#140D07] relative">
+                  {isLoading && supplies.length === 0 && (
+                    <div className="absolute inset-0 bg-[#140D07]/80 flex justify-center items-center z-10">
+                      <div className="w-8 h-8 rounded-full border-2 border-aura-amber border-t-transparent animate-spin"></div>
+                    </div>
+                  )}
                   <div className="flex justify-between items-start mb-6">
                     <div>
                       <h2 className="text-2xl font-bold font-sans mb-1 tracking-tight">Supply Inventory</h2>

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { requests } from '../data/requests';
+import { getMyRequests, createRequest } from '../api';
 import Sidebar from '../components/common/Sidebar';
 import Navbar from '../components/common/Navbar';
 import StatCard from '../components/common/StatCard';
@@ -15,8 +15,29 @@ import { useNavigate } from 'react-router-dom';
 export default function GNOfficerDashboard() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
+  const [requests, setRequests] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [submittedRequest, setSubmittedRequest] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const fetchMyRequests = async () => {
+    try {
+      const data = await getMyRequests();
+      // Sort by newest first
+      setRequests(data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
+    } catch (err) {
+      console.error("Failed to fetch requests", err);
+      setError('Failed to sync data with AURA servers.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMyRequests();
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -31,18 +52,22 @@ export default function GNOfficerDashboard() {
     { path: '/users', label: 'User Management', icon: Users },
   ];
 
-  // Dummy logic for stats
-  const pendingCount = requests.filter(r => r.status === 'PENDING').length;
-  const transitCount = requests.filter(r => r.status === 'ASSIGNED').length;
-  const criticalCount = requests.filter(r => r.priority === 'CRITICAL').length;
+  const pendingCount = requests.filter(r => r.status === 'pending').length;
+  const transitCount = requests.filter(r => r.status === 'approved').length;
+  const criticalCount = requests.filter(r => r.prolog_analysis?.priority_level === 'red').length;
 
-  const handleRequestSubmit = (data) => {
-    setSubmittedRequest({
-      ...data,
-      id: `RQ-${Math.floor(Math.random() * 9000) + 1000}`,
-      timestamp: new Date().toISOString()
-    });
-    setIsModalOpen(true);
+  const handleRequestSubmit = async (data) => {
+    setIsSubmitting(true);
+    try {
+      const newRequest = await createRequest(data);
+      setSubmittedRequest(newRequest);
+      setIsModalOpen(true);
+      fetchMyRequests(); // Refresh table
+    } catch (err) {
+      alert(err.message || 'Error initializing deployment.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -64,28 +89,34 @@ export default function GNOfficerDashboard() {
             
             {/* Left Column - Request Form */}
             <div className="col-span-12 lg:col-span-4 h-[calc(100vh-144px)] flex flex-col">
-              <RequestForm onSubmit={handleRequestSubmit} />
+              <RequestForm onSubmit={handleRequestSubmit} isSubmitting={isSubmitting} />
             </div>
 
             {/* Right Column */}
             <div className="col-span-12 lg:col-span-8 flex flex-col gap-6">
+              {error && (
+                <div className="bg-aura-red/20 border border-aura-red text-white p-3 rounded font-mono text-xs">
+                  {error}
+                </div>
+              )}
+              
               {/* Stats Row */}
               <div className="grid grid-cols-3 gap-6">
                 <StatCard 
                   title="PENDING APPROVAL" 
-                  value="12" 
+                  value={isLoading ? '-' : pendingCount.toString()} 
                   colorClass="text-aura-amber"
                   valueColorClass="text-aura-amber"
                 />
                 <StatCard 
                   title="IN TRANSIT" 
-                  value="08" 
+                  value={isLoading ? '-' : transitCount.toString()} 
                   colorClass="text-blue-400"
                   valueColorClass="text-blue-400"
                 />
                 <StatCard 
                   title="CRITICAL ALERTS" 
-                  value="03" 
+                  value={isLoading ? '-' : criticalCount.toString()} 
                   colorClass="text-aura-red"
                   valueColorClass="text-aura-red"
                 />

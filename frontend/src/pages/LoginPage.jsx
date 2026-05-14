@@ -1,51 +1,40 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { users } from '../data/users';
+import { loginUser } from '../api';
 import { ROLES } from '../constants';
 import Button from '../components/common/Button';
 import Card from '../components/common/Card';
 import Input from '../components/common/Input';
-import { Shield, HeartHandshake, ShieldAlert, AtSign, Lock, Eye, Activity, EyeOff } from 'lucide-react';
+import { Activity, AtSign, Lock, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
-  const [selectedRole, setSelectedRole] = useState(ROLES.GN_OFFICER);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  // Pre-fill credentials based on role selection for convenience
-  useEffect(() => {
-    const defaultUser = users.find(u => u.role === selectedRole);
-    if (defaultUser) {
-      setEmail(defaultUser.email);
-      setPassword(defaultUser.password);
-    }
-  }, [selectedRole]);
-
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     if (e) e.preventDefault();
     setError('');
-    const user = users.find(u => u.role === selectedRole && u.email === email && u.password === password);
-    
-    if (user) {
-      login(user);
-      if (user.role === ROLES.GN_OFFICER) navigate('/dashboard/gn');
-      else if (user.role === ROLES.DONOR) navigate('/dashboard/donor');
-      else if (user.role === ROLES.SUPER_ADMIN) navigate('/dashboard/admin');
-    } else {
-      setError('Invalid identity or cipher. Please verify credentials.');
+    setIsLoading(true);
+
+    try {
+      const data = await loginUser(email, password);
+      login(data.access_token, data.user);
+
+      if (data.user.role === ROLES.GN_OFFICER) navigate('/dashboard/gn');
+      else if (data.user.role === ROLES.DONOR) navigate('/dashboard/donor');
+      else if (data.user.role === ROLES.SUPER_ADMIN) navigate('/dashboard/admin');
+    } catch (err) {
+      setError(err.message || 'Invalid identity or cipher. Please verify credentials.');
+    } finally {
+      setIsLoading(false);
     }
   };
-
-  const roleOptions = [
-    { role: ROLES.GN_OFFICER, label: 'GN Officer', icon: Shield },
-    { role: ROLES.DONOR, label: 'Donor', icon: HeartHandshake },
-    { role: ROLES.SUPER_ADMIN, label: 'Super Admin', icon: ShieldAlert },
-  ];
 
   return (
     <div className="min-h-screen bg-aura-bg flex flex-col font-sans relative">
@@ -69,27 +58,6 @@ export default function LoginPage() {
             <p className="text-[10px] text-white/50 font-mono tracking-[0.18em]">AUTOMATED URGENT RELIEF ALLOCATION</p>
           </div>
 
-          {/* Role Selector */}
-          <div className="mb-6">
-            <label className="block text-xs font-mono text-white/70 mb-3">Select Access Protocol</label>
-            <div className="grid grid-cols-3 gap-2">
-              {roleOptions.map((opt) => (
-                <button
-                  key={opt.role}
-                  onClick={() => setSelectedRole(opt.role)}
-                  className={`flex flex-col items-center justify-center py-4 rounded border transition-colors duration-200 ${
-                    selectedRole === opt.role 
-                      ? 'border-aura-amber text-aura-amber bg-aura-amber/5' 
-                      : 'border-white/10 text-white/50 hover:bg-white/5'
-                  }`}
-                >
-                  <opt.icon size={20} className="mb-2" />
-                  <span className="text-[10px] font-mono whitespace-nowrap">{opt.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Form */}
           <form className="space-y-2" onSubmit={handleLogin}>
             <Input 
@@ -101,12 +69,13 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               iconLeft={AtSign}
               className="mb-4"
+              disabled={isLoading}
             />
 
             <div className="relative mb-2">
               <div className="flex justify-between items-center mb-2 absolute top-0 w-full z-10">
                 <span className="text-xs text-white/70 font-sans" style={{ visibility: 'hidden' }}>Secure Cipher (Password)</span>
-                <button className="text-[9px] font-mono text-aura-amber hover:underline uppercase tracking-wider -mt-7 mr-1">Reset Cipher</button>
+                <button type="button" className="text-[9px] font-mono text-aura-amber hover:underline uppercase tracking-wider -mt-7 mr-1">Reset Cipher</button>
               </div>
               <Input 
                 id="password"
@@ -119,6 +88,7 @@ export default function LoginPage() {
                 iconRight={showPassword ? EyeOff : Eye}
                 onIconRightClick={() => setShowPassword(!showPassword)}
                 className="mb-2"
+                disabled={isLoading}
               />
             </div>
 
@@ -129,7 +99,13 @@ export default function LoginPage() {
               <label htmlFor="maintain_session" className="text-[9px] font-mono text-white/50 tracking-[0.1em] cursor-pointer">MAINTAIN SESSION AUTHORIZATION</label>
             </div>
 
-            <Button type="submit" className="w-full py-3.5 text-sm tracking-widest mt-2">
+            <Button type="submit" disabled={isLoading} className="w-full py-3.5 text-sm tracking-widest mt-2 flex justify-center items-center">
+              {isLoading ? (
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              ) : null}
               INITIALIZE ACCESS
             </Button>
           </form>
@@ -137,7 +113,7 @@ export default function LoginPage() {
           {/* Footer */}
           <div className="mt-8 text-center space-y-3">
             <div className="flex justify-center gap-6 text-[10px] font-mono tracking-widest text-white/70">
-              <span className="hover:text-white cursor-pointer transition-colors">SYSTEM STATUS</span>
+              <span className="hover:text-white cursor-pointer transition-colors" onClick={() => navigate('/public')}>PUBLIC BOARD →</span>
               <span className="hover:text-white cursor-pointer transition-colors">SECURITY POLICY</span>
             </div>
             <div className="text-[9px] font-mono text-white/30 tracking-wider leading-relaxed">

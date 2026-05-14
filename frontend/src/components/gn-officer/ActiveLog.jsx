@@ -11,13 +11,13 @@ export default function ActiveLog({ requests }) {
   const columns = [
     { 
       header: 'ID', 
-      accessor: 'id',
-      cell: (row) => <span className="text-aura-amber font-mono text-sm font-bold tracking-wider">{formatRequestId(row.id)}</span>
+      accessor: '_id',
+      cell: (row) => <span className="text-aura-amber font-mono text-sm font-bold tracking-wider" title={row._id}>{formatRequestId(row._id?.slice(-6) || 'N/A')}</span>
     },
     { 
       header: 'SUPPLY TYPE', 
       cell: (row) => (
-        <span className="font-sans text-sm text-white/90">{row.itemName}</span>
+        <span className="font-sans text-sm text-white/90">{row.supply_type}</span>
       )
     },
     { 
@@ -26,7 +26,7 @@ export default function ActiveLog({ requests }) {
     },
     { 
       header: 'PRIORITY', 
-      cell: (row) => <Badge priority={row.priority} /> 
+      cell: (row) => <Badge priority={row.prolog_analysis?.priority_level || 'yellow'} /> 
     },
     { 
       header: 'ACTION', 
@@ -48,7 +48,11 @@ export default function ActiveLog({ requests }) {
         </div>
       </div>
       
-      <Table columns={columns} data={requests.slice(0, 3)} className="border-t border-white/5" />
+      {requests.length > 0 ? (
+        <Table columns={columns} data={requests.slice(0, 3)} className="border-t border-white/5" />
+      ) : (
+        <div className="p-6 text-center text-white/40 text-sm font-mono border-t border-white/5">No active requests found.</div>
+      )}
     </Card>
   );
 }

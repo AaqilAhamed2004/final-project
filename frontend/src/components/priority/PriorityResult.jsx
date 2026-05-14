@@ -10,8 +10,8 @@ import PriorityBadge from './PriorityBadge';
 export default function PriorityResult({ requestData, onClose, isModal = true }) {
   // If no requestData, provide some dummy data for standalone view
   const data = requestData || {
-    id: 'AQ-992-ALPHA-X',
-    isSpecial: true,
+    _id: 'AQ-992-ALPHA-X',
+    is_special: true,
   };
 
   const containerClasses = isModal 
@@ -47,14 +47,14 @@ export default function PriorityResult({ requestData, onClose, isModal = true })
         <div className="flex flex-col gap-4">
           <Card className="py-5 px-6 border-white/5 bg-[#140D07]">
             <div className="text-[10px] font-mono tracking-widest text-white/50 mb-1.5 uppercase">Request ID</div>
-            <div className="text-2xl font-mono font-bold tracking-wider">{data.id}</div>
+            <div className="text-2xl font-mono font-bold tracking-wider">{data._id || data.id}</div>
           </Card>
           
-          <PriorityBadge isSpecial={data.isSpecial} />
+          <PriorityBadge priority={data.prolog_analysis?.priority_level} isSpecial={data.is_special || data.isSpecial} />
         </div>
 
         {/* Prolog Logic Summary */}
-        <PrologSummary />
+        <PrologSummary analysis={data.prolog_analysis} />
       </div>
 
       {/* Buttons */}

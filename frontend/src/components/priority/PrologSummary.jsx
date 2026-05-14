@@ -3,9 +3,9 @@ import PropTypes from 'prop-types';
 import Card from '../common/Card';
 import { Settings } from 'lucide-react';
 
-export default function PrologSummary({ summaryLines }) {
-  // Default lines if none provided
-  const lines = summaryLines || [
+export default function PrologSummary({ analysis, summaryLines }) {
+  // Use analysis reasoning if provided, otherwise default fallback lines
+  const lines = analysis?.reasoning || summaryLines || [
     "Analysis: Casualty density exceeds local threshold (8.2/km²).",
     "Resource conflict: Overlapping medic requests in Zone-4.",
     "Environmental: Category 4 storm surge imminent (T-14m).",

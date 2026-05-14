@@ -5,12 +5,12 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { PRIORITY_LEVELS } from '../../constants';
 
 export default function PriorityDonut({ requests }) {
-  const activeRequests = requests.filter(r => r.status !== 'DELIVERED');
+  const activeRequests = requests.filter(r => r.status === 'pending');
   const total = activeRequests.length;
   
-  const critical = activeRequests.filter(r => r.priority === PRIORITY_LEVELS.CRITICAL).length;
-  const moderate = activeRequests.filter(r => r.priority === PRIORITY_LEVELS.MODERATE).length;
-  const low = activeRequests.filter(r => r.priority === PRIORITY_LEVELS.LOW).length;
+  const critical = activeRequests.filter(r => r.prolog_analysis?.priority_level === PRIORITY_LEVELS.RED).length;
+  const moderate = activeRequests.filter(r => r.prolog_analysis?.priority_level === PRIORITY_LEVELS.ORANGE).length;
+  const low = activeRequests.filter(r => r.prolog_analysis?.priority_level === PRIORITY_LEVELS.YELLOW).length;
 
   const data = [
     { name: 'Critical', value: critical, color: '#DC2626' }, // text-aura-red

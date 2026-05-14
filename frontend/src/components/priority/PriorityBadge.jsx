@@ -1,27 +1,15 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import Card from '../common/Card';
-
-export default function PriorityBadge({ isSpecial }) {
-  const isCritical = isSpecial;
-  const bgColor = isCritical ? 'bg-[#200D0E]' : 'bg-[#1F1206]';
-  const borderColor = isCritical ? 'border-aura-red' : 'border-aura-orange';
-  const dotColor = isCritical ? 'bg-aura-red' : 'bg-aura-orange';
-  const textColor = isCritical ? 'text-[#FF8A8A]' : 'text-aura-orange';
-  const label = isCritical ? 'CRITICAL RED' : 'MODERATE ORANGE';
-
-  return (
-    <Card className={`py-5 px-6 ${borderColor} ${bgColor}`}>
-      <div className="flex justify-between items-start mb-1.5">
-        <div className="text-[10px] font-mono tracking-widest text-white/50 uppercase">Priority Level</div>
-        <div className={`w-2 h-2 rounded-full ${dotColor} animate-pulse`}></div>
-      </div>
-      <div className={`text-2xl font-bold ${textColor} mb-1.5 tracking-wider font-sans`}>{label}</div>
-      <div className="text-[9px] font-mono tracking-widest text-white/40 uppercase">Immediate Deployment Required</div>
-    </Card>
-  );
+const CONFIG = {
+  red:    { label: 'CRITICAL', cls: 'bg-red-900/50 text-red-300 border border-red-600' },
+  orange: { label: 'URGENT',   cls: 'bg-orange-900/50 text-orange-300 border border-orange-500' },
+  yellow: { label: 'STANDARD', cls: 'bg-yellow-900/50 text-yellow-300 border border-yellow-600' },
 }
 
-PriorityBadge.propTypes = {
-  isSpecial: PropTypes.bool.isRequired,
-};
+export default function PriorityBadge({ level, priority }) {
+  const badgeLevel = priority || level;
+  const c = CONFIG[badgeLevel] || CONFIG.yellow
+  return (
+    <span className={`text-xs font-mono font-bold px-2 py-1 rounded tracking-widest uppercase ${c.cls}`}>
+      {c.label}
+    </span>
+  )
+}

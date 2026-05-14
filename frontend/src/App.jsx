@@ -1,64 +1,55 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import { useAuth } from './hooks/useAuth';
-import { ROLES } from './constants';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider, useAuth } from './context/AuthContext'
+import LoginPage from './pages/LoginPage'
+import SuperAdminDashboard from './pages/SuperAdminDashboard'
+import GNOfficerDashboard from './pages/GNOfficerDashboard'
+import DonorReliefBoard from './pages/DonorReliefBoard'
+import PriorityResultScreen from './pages/PriorityResultScreen'
 
-import ProtectedRoute from './components/auth/ProtectedRoute';
-import LoginPage from './pages/LoginPage';
-import GNOfficerDashboard from './pages/GNOfficerDashboard';
-import DonorReliefBoard from './pages/DonorReliefBoard';
-import SuperAdminDashboard from './pages/SuperAdminDashboard';
-import PriorityResultScreen from './pages/PriorityResultScreen';
-
-// RootRedirect component checks the current user and redirects to their specific dashboard
-// This prevents authenticated users from seeing the login screen if they visit the root URL.
-function RootRedirect() {
-  const { currentUser } = useAuth();
-  
-  if (!currentUser) return <Navigate to="/login" replace />;
-  
-  if (currentUser.role === ROLES.GN_OFFICER) return <Navigate to="/dashboard/gn" replace />;
-  if (currentUser.role === ROLES.DONOR) return <Navigate to="/dashboard/donor" replace />;
-  if (currentUser.role === ROLES.SUPER_ADMIN) return <Navigate to="/dashboard/admin" replace />;
-  
-  return <Navigate to="/login" replace />;
+function ProtectedRoute({ children, allowedRoles }) {
+  const { user, token } = useAuth()
+  if (!token) return <Navigate to="/login" replace />
+  if (allowedRoles && !allowedRoles.includes(user?.role))
+    return <Navigate to="/login" replace />
+  return children
 }
 
 export default function App() {
   return (
     <AuthProvider>
-      <Router>
+      <BrowserRouter>
         <Routes>
-          <Route path="/" element={<RootRedirect />} />
+          <Route path="/"       element={<Navigate to="/public" replace />} />
+          <Route path="/login"  element={<LoginPage />} />
+          <Route path="/public" element={<DonorReliefBoard />} />
+
+          <Route path="/dashboard/admin" element={
+            <ProtectedRoute allowedRoles={['super_admin']}>
+              <SuperAdminDashboard />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/dashboard/gn" element={
+            <ProtectedRoute allowedRoles={['gn_officer']}>
+              <GNOfficerDashboard />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/dashboard/donor" element={
+            <ProtectedRoute allowedRoles={['donor']}>
+              <DonorReliefBoard />
+            </ProtectedRoute>
+          } />
           
-          {/* Public Route */}
-          <Route path="/login" element={<LoginPage />} />
-          
-          {/* GN Officer Protected Routes */}
-          <Route element={<ProtectedRoute allowedRoles={[ROLES.GN_OFFICER]} />}>
-            <Route path="/dashboard/gn" element={<GNOfficerDashboard />} />
-          </Route>
-
-          {/* Donor Protected Routes */}
-          <Route element={<ProtectedRoute allowedRoles={[ROLES.DONOR]} />}>
-            <Route path="/dashboard/donor" element={<DonorReliefBoard />} />
-          </Route>
-
-          {/* Super Admin Protected Routes */}
-          <Route element={<ProtectedRoute allowedRoles={[ROLES.SUPER_ADMIN]} />}>
-            <Route path="/dashboard/admin" element={<SuperAdminDashboard />} />
-          </Route>
-
-          {/* Shared Protected Routes */}
-          <Route element={<ProtectedRoute allowedRoles={[ROLES.GN_OFFICER, ROLES.SUPER_ADMIN]} />}>
-            <Route path="/priority-result" element={<PriorityResultScreen />} />
-          </Route>
-
-          {/* Catch-all fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* Fallback route for legacy /dashboard */}
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              {/* Note: In a real app we might redirect based on user role here */}
+              <Navigate to="/login" replace />
+            </ProtectedRoute>
+          } />
         </Routes>
-      </Router>
+      </BrowserRouter>
     </AuthProvider>
-  );
+  )
 }

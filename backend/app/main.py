@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-# 1. TEMPORARILY COMMENTED OUT UNTIL WE BUILD THEM:
-# from .routers import auth, requests, inventory, logic, public
+1. TEMPORARILY COMMENTED OUT UNTIL WE BUILD THEM:
+from .routers import auth, requests, inventory, logic, public
 
 app = FastAPI(
     title="AURA API",
@@ -18,12 +18,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 2. TEMPORARILY COMMENTED OUT UNTIL WE BUILD THEM:
-# app.include_router(auth.router,      prefix="/api/auth",      tags=["Authentication"])
-# app.include_router(requests.router,  prefix="/api/requests",  tags=["Requests"])
-# app.include_router(inventory.router, prefix="/api/inventory", tags=["Inventory"])
-# app.include_router(logic.router,     prefix="/api/logic",     tags=["Prolog Logic Engine"])
-# app.include_router(public.router,    prefix="/api/public",    tags=["Public Board"])
+2. TEMPORARILY COMMENTED OUT UNTIL WE BUILD THEM:
+app.include_router(auth.router,      prefix="/api/auth",      tags=["Authentication"])
+app.include_router(requests.router,  prefix="/api/requests",  tags=["Requests"])
+app.include_router(inventory.router, prefix="/api/inventory", tags=["Inventory"])
+app.include_router(logic.router,     prefix="/api/logic",     tags=["Prolog Logic Engine"])
+app.include_router(public.router,    prefix="/api/public",    tags=["Public Board"])
 
 @app.get("/", tags=["Health"])
 def root():

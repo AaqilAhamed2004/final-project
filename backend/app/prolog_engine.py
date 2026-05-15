@@ -27,11 +27,31 @@ PRIORITY_PL   = os.path.join(BASE_DIR, "prolog", "priority_rules.pl")
 MEDICINE_PL   = os.path.join(BASE_DIR, "prolog", "medicine_kb.pl")
 RISK_PL       = os.path.join(BASE_DIR, "prolog", "risk_assessment.pl")
 
-# Single global Prolog instance — loaded once when this module is first imported
-prolog = Prolog()
-prolog.consult(PRIORITY_PL)
-prolog.consult(MEDICINE_PL)
-prolog.consult(RISK_PL)
+# Global instance and flag to prevent double-initialization
+_prolog_instance = None
+_is_initialized = False
+
+def get_prolog():
+    """
+    Thread-safe lazy initialization of the Prolog engine.
+    This prevents the 'Assertion failed' crash common with FastAPI's --reload.
+    """
+    global _prolog_instance, _is_initialized
+    
+    if not _is_initialized:
+        print("[AURA] Initializing Prolog Logic Engine...")
+        try:
+            _prolog_instance = Prolog()
+            _prolog_instance.consult(PRIORITY_PL)
+            _prolog_instance.consult(MEDICINE_PL)
+            _prolog_instance.consult(RISK_PL)
+            _is_initialized = True
+            print("[AURA] Prolog Logic Engine ready.")
+        except Exception as e:
+            print(f"[AURA ERROR] Failed to initialize Prolog: {e}")
+            raise RuntimeError("Prolog engine could not be started. Ensure SWI-Prolog is installed.")
+            
+    return _prolog_instance
 
 
 # ── Helper functions ───────────────────────────────────────────────────────────
@@ -125,6 +145,8 @@ def analyze_request(request_id: str) -> dict:
     min_stock = min(cat_stocks) if cat_stocks else 0
     stock_level = _stock_level(min_stock)
 
+    prolog = get_prolog()
+    
     # Step 3: Query priority classification
     priority_query = (
         f"assign_priority({category}, {road}, {pop}, {stock_level}, P)"
@@ -162,7 +184,7 @@ def analyze_request(request_id: str) -> dict:
     risk_flags = []
     try:
         flag_query = f"get_all_flags({road}, {pop}, {category}, {stock_level}, Flags)"
-        flag_results = list(prolog.query(flag_query))
+        flag_results = list(get_prolog().query(flag_query))
         if flag_results and "Flags" in flag_results[0]:
             risk_flags = [str(f) for f in flag_results[0]["Flags"]]
     except Exception as e:

@@ -8,16 +8,20 @@ from bson import ObjectId
 router = APIRouter()
 
 @router.post("", response_model=ReliefRequestResponse)
-async def create_request(data: ReliefRequestCreate, current_user: dict = Depends(require_role("gn_officer", "super_admin"))):
-    req_dict = data.dict()
-    req_dict["creator_id"] = current_user["_id"]
-    req_dict["status"] = "pending"
-    req_dict["created_at"] = datetime.utcnow()
-    req_dict["priority_level"] = "yellow"
-    
-    result = requests_col.insert_one(req_dict)
-    req_dict["_id"] = str(result.inserted_id)
-    return req_dict
+async def create_request(data: ReliefRequestCreate, current_user: dict = Depends(require_role(["gn_officer", "super_admin"]))):
+    try:
+        req_dict = data.model_dump()
+        req_dict["creator_id"] = str(current_user["_id"])
+        req_dict["status"] = "pending"
+        req_dict["created_at"] = datetime.utcnow()
+        req_dict["priority_level"] = "yellow"  # Default before AI analysis
+        
+        result = requests_col.insert_one(req_dict)
+        req_dict["_id"] = str(result.inserted_id)
+        return req_dict
+    except Exception as e:
+        print(f"[REQUEST ERROR] Failed to create: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error during request creation")
 
 @router.get("", response_model=list[ReliefRequestResponse])
 async def get_requests():
@@ -34,7 +38,7 @@ async def get_my_requests(current_user: dict = Depends(get_current_user)):
     return requests
 
 @router.patch("/{id}/status", response_model=ReliefRequestResponse)
-async def update_request_status(id: str, data: UpdateStatus, current_user: dict = Depends(require_role("gn_officer", "super_admin"))):
+async def update_request_status(id: str, data: UpdateStatus, current_user: dict = Depends(require_role(["gn_officer", "super_admin"]))):
     result = requests_col.find_one_and_update(
         {"_id": ObjectId(id)},
         {"$set": {"status": data.status}},

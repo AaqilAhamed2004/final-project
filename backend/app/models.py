@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from typing import List, Optional
 from datetime import datetime
 
@@ -15,14 +15,13 @@ class UserLogin(BaseModel):
     password: str
 
 class UserResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    
     id: str = Field(alias="_id")
     email: EmailStr
     full_name: str
     role: str
     is_active: bool = True
-
-    class Config:
-        populate_by_name = True
 
 # ── Request Models ──────────────────────────────────────────────────────────
 
@@ -42,6 +41,8 @@ class ReliefRequestCreate(BaseModel):
     is_public: bool = True
 
 class ReliefRequestResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    
     id: str = Field(alias="_id")
     creator_id: str
     title: str
@@ -54,9 +55,6 @@ class ReliefRequestResponse(BaseModel):
     is_public: bool
     created_at: datetime
     priority_level: str = "yellow"
-
-    class Config:
-        populate_by_name = True
 
 class UpdateStatus(BaseModel):
     status: str
@@ -71,10 +69,8 @@ class InventoryItem(BaseModel):
     location: str
 
 class InventoryItemResponse(InventoryItem):
+    model_config = ConfigDict(populate_by_name=True)
     id: str = Field(alias="_id")
-
-    class Config:
-        populate_by_name = True
 
 # ── Public Board Models ─────────────────────────────────────────────────────
 

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from ..models import ReliefRequestResponse, PublicStats, BookingCreate
 from ..database import requests_col, users_col, bookings_col, inventory_col
-from ..dependencies import get_current_user
+from app.dependencies import get_current_user, require_role
 from datetime import datetime
 from bson import ObjectId
 
@@ -30,25 +30,23 @@ async def get_stats():
         "items_distributed": items_distributed
     }
 
-@router.post("/book")
-async def book_request(data: BookingCreate, current_user: dict = Depends(get_current_user)):
-    # Check if request exists
-    request = requests_col.find_one({"_id": ObjectId(data.request_id)})
-    if not request:
-        raise HTTPException(status_code=404, detail="Request not found")
-    
-    booking = {
-        "request_id": data.request_id,
-        "donor_id": current_user["_id"],
-        "notes": data.notes,
-        "booked_at": datetime.utcnow()
-    }
-    bookings_col.insert_one(booking)
-    
-    # Optionally update request status
-    requests_col.update_one(
-        {"_id": ObjectId(data.request_id)},
-        {"$set": {"status": "ongoing"}}
-    )
-    
-    return {"message": "Request booked successfully. Thank you for your contribution!"}
+@router.post("/book", response_model=dict)
+async def book_request(data: BookingCreate, current_user: dict = Depends(require_role(["donor"]))):
+    try:
+        booking_dict = data.model_dump()
+        booking_dict["donor_id"] = str(current_user["_id"])
+        booking_dict["booked_at"] = datetime.utcnow()
+        
+        # Save to a new collection
+        db["bookings"].insert_one(booking_dict)
+        
+        # Update request status in main collection
+        requests_col.update_one(
+            {"_id": ObjectId(data.request_id)},
+            {"$set": {"status": "ongoing"}}
+        )
+        
+        return {"message": "Donation booked successfully", "booking_id": str(booking_dict["_id"])}
+    except Exception as e:
+        print(f"[PUBLIC ERROR] Booking failed: {e}")
+        raise HTTPException(status_code=500, detail="Internal Server Error during booking")

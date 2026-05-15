@@ -5,8 +5,8 @@ from ..dependencies import require_role
 
 router = APIRouter()
 
-@router.post("/analyze/{id}")
-async def run_analysis(id: str, current_user: dict = Depends(require_role("gn_officer", "super_admin"))):
+@router.post("/analyze/{id}", response_model=dict)
+async def run_analysis(id: str, current_user: dict = Depends(require_role(["gn_officer", "super_admin"]))):
     try:
         result = analyze_request(id)
         return result

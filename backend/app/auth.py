@@ -22,13 +22,20 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def hash_password(password: str) -> str:
-    """Hash a plain-text password. Always store the result, never the original."""
-    return pwd_context.hash(password)
+    """
+    Hash a plain-text password with a 72-byte safety cap for Bcrypt compatibility.
+    """
+    # Bcrypt has a 72-character limit; truncation prevents Internal Server Errors.
+    safe_password = password[:72]
+    return pwd_context.hash(safe_password)
 
 
-def verify_password(plain: str, hashed: str) -> bool:
-    """Check if a plain password matches its stored hash."""
-    return pwd_context.verify(plain, hashed)
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """
+    Verify a plain-text password against a hash, including the 72-byte safety cap.
+    """
+    safe_password = plain_password[:72]
+    return pwd_context.verify(safe_password, hashed_password)
 
 
 def create_access_token(data: dict) -> str:

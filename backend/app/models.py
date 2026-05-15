@@ -1,0 +1,89 @@
+from pydantic import BaseModel, EmailStr, Field
+from typing import List, Optional
+from datetime import datetime
+
+# ── Authentication Models ───────────────────────────────────────────────────
+
+class UserRegister(BaseModel):
+    email: EmailStr
+    password: str
+    full_name: str
+    role: str = "donor"  # donor, gn_officer, super_admin
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class UserResponse(BaseModel):
+    id: str = Field(alias="_id")
+    email: EmailStr
+    full_name: str
+    role: str
+    is_active: bool = True
+
+    class Config:
+        populate_by_name = True
+
+# ── Request Models ──────────────────────────────────────────────────────────
+
+class RequestItem(BaseModel):
+    item_name: str
+    category: str  # medicine, food, shelter, other
+    quantity: int
+    prolog_item_key: Optional[str] = None  # Key for Prolog KB (e.g., 'insulin')
+
+class ReliefRequestCreate(BaseModel):
+    title: str
+    description: str
+    location: str
+    items: List[RequestItem]
+    road_status: str = "clear"  # clear, blocked, flooded
+    population_size: str = "medium" # small, medium, large
+    is_public: bool = True
+
+class ReliefRequestResponse(BaseModel):
+    id: str = Field(alias="_id")
+    creator_id: str
+    title: str
+    description: str
+    location: str
+    items: List[RequestItem]
+    status: str = "pending" # pending, approved, ongoing, completed
+    road_status: str
+    population_size: str
+    is_public: bool
+    created_at: datetime
+    priority_level: str = "yellow"
+
+    class Config:
+        populate_by_name = True
+
+class UpdateStatus(BaseModel):
+    status: str
+
+# ── Inventory Models ────────────────────────────────────────────────────────
+
+class InventoryItem(BaseModel):
+    item_name: str
+    category: str
+    quantity: int
+    prolog_item_key: Optional[str] = None
+    location: str
+
+class InventoryItemResponse(InventoryItem):
+    id: str = Field(alias="_id")
+
+    class Config:
+        populate_by_name = True
+
+# ── Public Board Models ─────────────────────────────────────────────────────
+
+class BookingCreate(BaseModel):
+    request_id: str
+    notes: Optional[str] = None
+
+class PublicStats(BaseModel):
+    total_requests: int
+    active_relief_zones: int
+    total_donors: int
+    items_distributed: int

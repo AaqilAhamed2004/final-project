@@ -6,6 +6,9 @@ import SuperAdminDashboard from './pages/SuperAdminDashboard'
 import GNOfficerDashboard from './pages/GNOfficerDashboard'
 import DonorReliefBoard from './pages/DonorReliefBoard'
 import PriorityResultScreen from './pages/PriorityResultScreen'
+import AdminInventoryPage from './pages/AdminInventoryPage'
+import AdminRequestsPage from './pages/AdminRequestsPage'
+
 
 function ProtectedRoute({ children, allowedRoles }) {
   const { user, token } = useAuth()
@@ -42,6 +45,20 @@ export default function App() {
               <SuperAdminDashboard />
             </ProtectedRoute>
           } />
+
+          <Route path="/inventory" element={
+            <ProtectedRoute allowedRoles={['super_admin', 'gn_officer']}>
+              <AdminInventoryPage />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/requests" element={
+            <ProtectedRoute allowedRoles={['super_admin', 'gn_officer']}>
+              <AdminRequestsPage />
+            </ProtectedRoute>
+          } />
+
+
 
           <Route path="/dashboard/gn" element={
             <ProtectedRoute allowedRoles={['gn_officer']}>

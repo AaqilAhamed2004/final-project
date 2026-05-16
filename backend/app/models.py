@@ -57,6 +57,10 @@ class ReliefRequestResponse(BaseModel):
     is_public: bool = True
     created_at: Optional[datetime] = None
     priority_level: str = "Standard"
+    request_type: str = "Aura-Led"
+    urgency_level: str = "Normal"
+    etd: str = "Pending"
+    assigned_team: str = "Unassigned"
 
 
 class UpdateStatus(BaseModel):
@@ -70,10 +74,16 @@ class InventoryItem(BaseModel):
     quantity: int
     prolog_item_key: Optional[str] = None
     location: str
+    warehouse: str = "Main Hub"
+    bin_location: str = "A-1"
+    condition: str = "New"
+    expiration_date: Optional[str] = "2026-12-31"
+    last_audit: Optional[str] = "2024-01-01"
 
 class InventoryItemResponse(InventoryItem):
     model_config = ConfigDict(populate_by_name=True)
     id: str = Field(alias="_id")
+
 
 # ── Public Board Models ─────────────────────────────────────────────────────
 

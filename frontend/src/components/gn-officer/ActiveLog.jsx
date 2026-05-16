@@ -4,10 +4,10 @@ import Card from '../common/Card';
 import Table from '../common/Table';
 import Badge from '../common/Badge';
 import StatusBadge from '../common/StatusBadge';
-import { Eye, Filter, RefreshCw } from 'lucide-react';
+import { Eye, CheckCircle, PackageCheck, Clock } from 'lucide-react';
 import { formatRequestId } from '../../utils/priorityHelpers';
 
-export default function ActiveLog({ requests }) {
+export default function ActiveLog({ requests, onViewDetails, onStatusUpdate }) {
   const columns = [
     { 
       header: 'ID', 
@@ -15,9 +15,9 @@ export default function ActiveLog({ requests }) {
       cell: (row) => <span className="text-aura-amber font-mono text-sm font-bold tracking-wider" title={row._id}>{formatRequestId(row._id?.slice(-6) || 'N/A')}</span>
     },
     { 
-      header: 'SUPPLY TYPE', 
+      header: 'LOCATION', 
       cell: (row) => (
-        <span className="font-sans text-sm text-white/90">{row.supply_type}</span>
+        <span className="font-sans text-sm text-white/90 truncate max-w-[150px] block" title={row.location}>{row.location}</span>
       )
     },
     { 
@@ -26,32 +26,69 @@ export default function ActiveLog({ requests }) {
     },
     { 
       header: 'PRIORITY', 
-      cell: (row) => <Badge priority={row.prolog_analysis?.priority_level || 'yellow'} /> 
+      cell: (row) => <Badge priority={row.priority_level || 'Standard'} /> 
     },
     { 
       header: 'ACTION', 
-      cell: () => (
-        <button className="text-white/40 hover:text-white transition-colors">
-          <Eye size={16} />
-        </button>
+      cell: (row) => (
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => onViewDetails(row)}
+            className="text-white/30 hover:text-white transition-colors p-1" 
+            title="View Tactical Analysis"
+          >
+            <Eye size={16} />
+          </button>
+          
+          {row.status === 'pending' && (
+            <button 
+              onClick={() => onStatusUpdate(row._id, 'approved')}
+              className="text-aura-amber/40 hover:text-aura-amber transition-colors p-1"
+              title="Approve Request"
+            >
+              <CheckCircle size={16} />
+            </button>
+          )}
+
+          {row.status === 'ongoing' && (
+            <button 
+              onClick={() => onStatusUpdate(row._id, 'completed')}
+              className="text-green-500/40 hover:text-green-500 transition-colors p-1"
+              title="Mark as Completed"
+            >
+              <PackageCheck size={16} />
+            </button>
+          )}
+
+          {row.status === 'approved' && (
+            <div className="text-white/10" title="Awaiting Logistics">
+              <Clock size={16} />
+            </div>
+          )}
+        </div>
       )
     },
   ];
 
   return (
-    <Card className="flex flex-col p-0 overflow-hidden bg-[#140D07] border-white/5">
-      <div className="flex justify-between items-center p-6 pb-4">
-        <h2 className="text-xl font-bold font-sans">Active Log</h2>
-        <div className="flex items-center gap-4 text-white/40">
-          <button className="hover:text-white transition-colors"><Filter size={16} /></button>
-          <button className="hover:text-white transition-colors"><RefreshCw size={16} /></button>
+    <Card className="flex flex-col p-0 overflow-hidden bg-[#140D07] border-white/5 shadow-2xl">
+      <div className="flex justify-between items-center p-6 border-b border-white/5">
+        <div>
+          <h2 className="text-xl font-bold font-sans tracking-tight">Active Tactical Log</h2>
+          <p className="text-[10px] font-mono text-white/30 uppercase tracking-[0.2em] mt-1">Real-time request processing feed</p>
+        </div>
+        <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-aura-amber animate-pulse"></div>
+            <span className="text-[10px] font-mono text-aura-amber tracking-widest uppercase font-bold">Live Stream</span>
         </div>
       </div>
       
       {requests.length > 0 ? (
-        <Table columns={columns} data={requests.slice(0, 3)} className="border-t border-white/5" />
+        <div className="overflow-x-auto">
+          <Table columns={columns} data={requests} className="min-w-[600px]" />
+        </div>
       ) : (
-        <div className="p-6 text-center text-white/40 text-sm font-mono border-t border-white/5">No active requests found.</div>
+        <div className="p-12 text-center text-white/20 text-sm font-mono uppercase tracking-[0.3em]">No active deployments in this sector.</div>
       )}
     </Card>
   );
@@ -59,4 +96,6 @@ export default function ActiveLog({ requests }) {
 
 ActiveLog.propTypes = {
   requests: PropTypes.array.isRequired,
+  onViewDetails: PropTypes.func.isRequired,
+  onStatusUpdate: PropTypes.func.isRequired,
 };

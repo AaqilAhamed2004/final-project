@@ -7,7 +7,8 @@ export default function KPIRow({ supplies, requests }) {
   // Compute data
   const totalSupplyUnits = supplies.reduce((sum, item) => sum + (item.quantity || 0), 0);
   const openRequestsCount = requests.filter(r => r.status === 'pending').length;
-  const criticalCount = requests.filter(r => r.status === 'pending' && r.prolog_analysis?.priority_level === 'red').length;
+  const criticalCount = requests.filter(r => r.status === 'pending' && r.priority_level === 'Critical').length;
+
   
   // Try to find unique officers from requests to give a rough estimate of active personnel
   const uniqueOfficers = new Set(requests.map(r => r.gn_officer_id).filter(Boolean)).size;

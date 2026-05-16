@@ -13,27 +13,27 @@ export default function StatsStrip({ requests }) {
   return (
     <div className="flex gap-4 mb-8">
       {/* Active Count */}
-      <div className="flex-1 bg-[#1A1108] border border-aura-amber/20 rounded py-3.5 px-6 flex flex-col justify-center items-center">
-        <div className="text-[11px] font-mono text-white/70 font-bold tracking-wider mb-0.5">Active</div>
-        <div className="text-2xl font-bold font-sans text-aura-amber">{activeCount.toLocaleString()}</div>
+      <div className="flex-1 bg-[#1A1108]/40 border border-aura-amber/10 rounded-lg py-5 px-6 flex flex-col justify-center items-center shadow-lg transition-all duration-300 hover:border-aura-amber/30 group">
+        <div className="text-[10px] font-mono text-white/30 group-hover:text-white/50 font-bold tracking-[0.2em] uppercase mb-1">Active</div>
+        <div className="text-3xl font-bold font-sans text-aura-amber tracking-tighter">{activeCount.toLocaleString()}</div>
       </div>
       
       {/* Critical Count */}
-      <div className="flex-1 bg-[#200D0E] border border-aura-red/30 rounded py-3.5 px-6 flex flex-col justify-center items-center">
-        <div className="text-[11px] font-mono text-white/70 font-bold tracking-wider mb-0.5">Critical</div>
-        <div className="text-2xl font-bold font-sans text-[#FF8A8A]">{criticalCount.toLocaleString()}</div>
+      <div className="flex-1 bg-[#200D0E]/40 border border-aura-red/10 rounded-lg py-5 px-6 flex flex-col justify-center items-center shadow-lg transition-all duration-300 hover:border-aura-red/30 group">
+        <div className="text-[10px] font-mono text-white/30 group-hover:text-white/50 font-bold tracking-[0.2em] uppercase mb-1">Critical</div>
+        <div className="text-3xl font-bold font-sans text-aura-red tracking-tighter">{criticalCount.toLocaleString()}</div>
       </div>
 
       {/* Moderate Count */}
-      <div className="flex-1 bg-[#1F1206] border border-aura-orange/30 rounded py-3.5 px-6 flex flex-col justify-center items-center">
-        <div className="text-[11px] font-mono text-white/70 font-bold tracking-wider mb-0.5">Moderate</div>
-        <div className="text-2xl font-bold font-sans text-aura-orange">{moderateCount.toLocaleString()}</div>
+      <div className="flex-1 bg-[#1F1206]/40 border border-aura-orange/10 rounded-lg py-5 px-6 flex flex-col justify-center items-center shadow-lg transition-all duration-300 hover:border-aura-orange/30 group">
+        <div className="text-[10px] font-mono text-white/30 group-hover:text-white/50 font-bold tracking-[0.2em] uppercase mb-1">Moderate</div>
+        <div className="text-3xl font-bold font-sans text-aura-orange tracking-tighter">{moderateCount.toLocaleString()}</div>
       </div>
 
       {/* Low Count */}
-      <div className="flex-1 bg-[#161304] border border-aura-yellow/30 rounded py-3.5 px-6 flex flex-col justify-center items-center">
-        <div className="text-[11px] font-mono text-white/70 font-bold tracking-wider mb-0.5">Low</div>
-        <div className="text-2xl font-bold font-sans text-[var(--tw-colors-aura-yellow)]" style={{ color: '#CA8A04' }}>{lowCount.toLocaleString()}</div>
+      <div className="flex-1 bg-[#161304]/40 border border-aura-yellow/10 rounded-lg py-5 px-6 flex flex-col justify-center items-center shadow-lg transition-all duration-300 hover:border-aura-yellow/30 group">
+        <div className="text-[10px] font-mono text-white/30 group-hover:text-white/50 font-bold tracking-[0.2em] uppercase mb-1">Low</div>
+        <div className="text-3xl font-bold font-sans text-aura-yellow tracking-tighter">{lowCount.toLocaleString()}</div>
       </div>
     </div>
   );

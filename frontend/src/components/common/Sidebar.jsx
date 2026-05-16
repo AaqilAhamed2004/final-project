@@ -5,50 +5,65 @@ import { Settings, LogOut, FileText } from 'lucide-react';
 
 export default function Sidebar({ navItems, activeSessionText, onLogout }) {
   return (
-    <aside className="w-64 border-r border-white/5 bg-[#0D0905] h-screen flex flex-col fixed left-0 top-0">
+    <aside className="w-64 border-r border-white/5 bg-[#0D0905] h-screen flex flex-col fixed left-0 top-0 z-50">
+      {/* Brand Header */}
       <div className="p-6 border-b border-white/5">
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-1">
           <div className="w-4 h-4 rounded-full border-[3px] border-aura-amber flex items-center justify-center">
             <div className="w-1.5 h-1.5 rounded-full bg-aura-amber"></div>
           </div>
-          <h1 className="text-xl font-bold tracking-widest uppercase">AURA</h1>
+          <h1 className="text-xl font-bold tracking-[0.2em] uppercase text-white">AURA</h1>
         </div>
-        <div className="text-aura-amber text-sm font-sans mb-1">AURA Control</div>
-        <div className="text-white/40 text-xs font-sans">Active Session: {activeSessionText}</div>
+        <div className="text-aura-amber text-[10px] font-mono tracking-widest uppercase mb-1 mt-6">AURA Control</div>
+        <div className="text-white/40 text-[10px] font-mono tracking-wider">Active Session: {activeSessionText}</div>
       </div>
       
-      <nav className="flex-1 py-6 flex flex-col gap-2 px-4 overflow-y-auto">
-        {navItems.map((item) => (
-          <NavLink 
-            key={item.path}
-            to={item.path}
-            className={({ isActive }) => 
-              `flex items-center gap-4 px-4 py-3 rounded font-sans text-sm transition-colors duration-200 ${
-                isActive ? 'bg-aura-amber text-black font-semibold' : 'text-white/70 hover:bg-white/5 hover:text-white'
-              }`
-            }
-          >
-            <item.icon size={18} />
-            {item.label}
-          </NavLink>
-        ))}
-      </nav>
+      {/* Navigation Section */}
+      <div className="px-4 py-6">
+        <div className="text-[10px] font-mono tracking-[0.2em] text-white/30 uppercase px-4 mb-4">Operations</div>
+        <nav className="flex flex-col gap-1 overflow-y-auto">
+          {navItems.map((item) => (
+            <NavLink 
+              key={item.path}
+              to={item.path}
+              className={({ isActive }) => 
+                `flex items-center gap-4 px-4 py-3.5 rounded transition-all duration-300 ${
+                  isActive 
+                    ? 'bg-aura-amber text-black font-bold shadow-[0_0_15px_rgba(245,158,11,0.15)]' 
+                    : 'text-white/50 hover:bg-white/[0.03] hover:text-white'
+                }`
+              }
+            >
+              <item.icon size={18} className={({ isActive }) => isActive ? 'text-black' : ''} />
+              <span className="text-[11px] font-mono font-bold tracking-widest uppercase">{item.label}</span>
+            </NavLink>
+          ))}
+        </nav>
+      </div>
       
-      <div className="p-4 border-t border-white/5 flex flex-col gap-2">
-        <button className="flex items-center gap-4 px-4 py-3 rounded font-sans text-sm text-white/70 hover:bg-white/5 hover:text-white transition-colors duration-200 w-full text-left">
-          <FileText size={18} />
-          System Logs
+      {/* Bottom Actions */}
+      <div className="mt-auto p-4 border-t border-white/5 flex flex-col gap-1 bg-[#090604]">
+        <button className="flex items-center gap-4 px-4 py-3.5 rounded text-white/40 hover:bg-white/[0.03] hover:text-white/80 transition-all duration-300 w-full text-left group">
+          <FileText size={18} className="group-hover:text-aura-amber transition-colors" />
+          <span className="text-[10px] font-mono tracking-widest uppercase">System Logs</span>
         </button>
-        <button className="flex items-center gap-4 px-4 py-3 rounded font-sans text-sm text-white/70 hover:bg-white/5 hover:text-white transition-colors duration-200 w-full text-left">
-          <Settings size={18} />
-          Settings
+        <button className="flex items-center gap-4 px-4 py-3.5 rounded text-white/40 hover:bg-white/[0.03] hover:text-white/80 transition-all duration-300 w-full text-left group">
+          <Settings size={18} className="group-hover:text-aura-amber transition-colors" />
+          <span className="text-[10px] font-mono tracking-widest uppercase">Settings</span>
         </button>
+        
+        {/* Active Session Info Box (Matching Image 1) */}
+        <div className="mt-2 mx-1 p-3 rounded bg-white/[0.02] border border-white/5">
+            <div className="text-[8px] font-mono text-white/30 tracking-[0.2em] uppercase mb-1">Active Session</div>
+            <div className="text-[10px] font-mono text-aura-amber font-bold tracking-wider">{activeSessionText}</div>
+        </div>
+
         <button 
           onClick={onLogout}
-          className="flex items-center gap-4 px-4 py-3 rounded font-sans text-sm text-red-300 hover:bg-red-500/10 hover:text-red-400 transition-colors duration-200 w-full text-left"
+          className="flex items-center gap-4 px-4 py-4 rounded text-red-400/70 hover:bg-red-500/10 hover:text-red-400 transition-all duration-300 w-full text-left mt-2 group"
         >
           <LogOut size={18} />
-          Logout
+          <span className="text-[10px] font-mono font-bold tracking-widest uppercase">Logout</span>
         </button>
       </div>
     </aside>

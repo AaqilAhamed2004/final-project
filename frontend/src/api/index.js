@@ -26,8 +26,17 @@ async function apiFetch(endpoint, options = {}) {
 }
 
 // ── Authentication ──────────────────────────────────────────────────────
-export const loginUser    = (email, password) =>
-  apiFetch('/api/auth/login',    { method: 'POST', body: JSON.stringify({ email, password }) })
+export const loginUser = (email, password) => {
+  const body = new URLSearchParams()
+  body.append('username', email) // Backend reads email from 'username' field
+  body.append('password', password)
+  return apiFetch('/api/auth/login', { 
+    method: 'POST', 
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: body.toString() 
+  })
+}
+
 
 export const registerUser = (data) =>
   apiFetch('/api/auth/register', { method: 'POST', body: JSON.stringify(data) })

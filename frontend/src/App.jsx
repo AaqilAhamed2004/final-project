@@ -15,14 +15,27 @@ function ProtectedRoute({ children, allowedRoles }) {
   return children
 }
 
+function RootRedirect() {
+  const { token, user } = useAuth()
+  
+  if (!token) return <Navigate to="/login" replace />
+  
+  if (user?.role === 'super_admin') return <Navigate to="/dashboard/admin" replace />
+  if (user?.role === 'gn_officer')  return <Navigate to="/dashboard/gn" replace />
+  if (user?.role === 'donor')       return <Navigate to="/dashboard/donor" replace />
+  
+  return <Navigate to="/public" replace />
+}
+
 export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/"       element={<Navigate to="/public" replace />} />
+          <Route path="/"       element={<RootRedirect />} />
           <Route path="/login"  element={<LoginPage />} />
           <Route path="/public" element={<DonorReliefBoard />} />
+
 
           <Route path="/dashboard/admin" element={
             <ProtectedRoute allowedRoles={['super_admin']}>

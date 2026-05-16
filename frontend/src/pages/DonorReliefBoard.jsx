@@ -100,7 +100,8 @@ export default function DonorReliefBoard() {
 
         <StatsStrip requests={liveRequests} />
         
-        <FilterBar filters={filters} onFilterChange={handleFilterChange} />
+        <FilterBar filters={filters} onFilterChange={handleFilterChange} onRefresh={fetchBoardData} />
+
 
         {isLoading && liveRequests.length === 0 ? (
           <div className="flex justify-center items-center h-64">

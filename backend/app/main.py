@@ -4,10 +4,21 @@ from fastapi.middleware.cors import CORSMiddleware
 # 1. Routers
 from app.routers import auth, requests, inventory, logic, public
 
+from contextlib import asynccontextmanager
+from app.prolog_engine import start_prolog_worker
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Start the isolated Prolog worker thread
+    start_prolog_worker()
+    yield
+    # Shutdown logic if needed
+
 app = FastAPI(
     title="AURA API",
     description="Automated Urgent Relief Allocation - FastAPI + MongoDB + SWI-Prolog",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 app.add_middleware(

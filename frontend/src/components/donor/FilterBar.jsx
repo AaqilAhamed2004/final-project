@@ -5,7 +5,7 @@ import Button from '../common/Button';
 import { Filter } from 'lucide-react';
 import { PRIORITY_LEVELS, SUPPLY_CATEGORIES } from '../../constants';
 
-export default function FilterBar({ filters, onFilterChange }) {
+export default function FilterBar({ filters, onFilterChange, onRefresh }) {
   const priorityOptions = [
     { value: 'ALL', label: 'Priority: All' },
     ...Object.values(PRIORITY_LEVELS).map(p => ({ value: p, label: `Priority: ${p}` }))
@@ -53,7 +53,7 @@ export default function FilterBar({ filters, onFilterChange }) {
           className="mb-0"
         />
       </div>
-      <Button className="py-3 px-6 shrink-0 h-[46px]" onClick={() => {/* Update Feed */}}>
+      <Button className="py-3 px-6 shrink-0 h-[46px]" onClick={onRefresh}>
         <Filter size={16} />
         Update Feed
       </Button>
@@ -64,4 +64,5 @@ export default function FilterBar({ filters, onFilterChange }) {
 FilterBar.propTypes = {
   filters: PropTypes.object.isRequired,
   onFilterChange: PropTypes.func.isRequired,
+  onRefresh: PropTypes.func.isRequired,
 };

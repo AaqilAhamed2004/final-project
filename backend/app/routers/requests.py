@@ -1,22 +1,32 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 from ..models import ReliefRequestCreate, ReliefRequestResponse, UpdateStatus
 from ..database import requests_col
 from ..dependencies import get_current_user, require_role
+from ..prolog_engine import analyze_request
 from datetime import datetime
 from bson import ObjectId
 
 router = APIRouter()
 
 @router.post("", response_model=ReliefRequestResponse)
-async def create_request(data: ReliefRequestCreate, current_user: dict = Depends(require_role(["gn_officer", "super_admin"]))):
+async def create_request(data: ReliefRequestCreate, background_tasks: BackgroundTasks, current_user: dict = Depends(require_role(["gn_officer", "super_admin"]))):
     try:
         req_dict = data.model_dump()
+        
+        # Default title if none provided
+        if not req_dict.get("title"):
+            req_dict["title"] = f"Relief Request: {data.location}"
+            
         req_dict["creator_id"] = str(current_user["_id"])
         req_dict["status"] = "pending"
         req_dict["created_at"] = datetime.utcnow()
         req_dict["priority_level"] = "yellow"  # Default before AI analysis
         
         result = requests_col.insert_one(req_dict)
+        
+        # Trigger AI Analysis in the background
+        background_tasks.add_task(analyze_request, str(result.inserted_id))
+        
         req_dict["_id"] = str(result.inserted_id)
         return req_dict
     except Exception as e:
@@ -32,7 +42,7 @@ async def get_requests():
 
 @router.get("/my", response_model=list[ReliefRequestResponse])
 async def get_my_requests(current_user: dict = Depends(get_current_user)):
-    requests = list(requests_col.find({"creator_id": current_user["_id"]}).sort("created_at", -1))
+    requests = list(requests_col.find({"creator_id": str(current_user["_id"])}).sort("created_at", -1))
     for r in requests:
         r["_id"] = str(r["_id"])
     return requests

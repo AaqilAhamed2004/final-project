@@ -28,11 +28,13 @@ class UserResponse(BaseModel):
 class RequestItem(BaseModel):
     item_name: str
     category: str  # medicine, food, shelter, other
-    quantity: int
+    quantity: int = 0
+    quantity_needed: Optional[int] = 0
+    current_stock: Optional[int] = 0
     prolog_item_key: Optional[str] = None  # Key for Prolog KB (e.g., 'insulin')
 
 class ReliefRequestCreate(BaseModel):
-    title: str
+    title: Optional[str] = None
     description: str
     location: str
     items: List[RequestItem]

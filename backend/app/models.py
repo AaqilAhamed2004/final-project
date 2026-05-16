@@ -46,17 +46,18 @@ class ReliefRequestResponse(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     
     id: str = Field(alias="_id")
-    creator_id: str
-    title: str
+    creator_id: Optional[str] = "system"
+    title: Optional[str] = "Untitled Relief Request"
     description: str
     location: str
-    items: List[RequestItem]
+    items: List[RequestItem] = []
     status: str = "pending" # pending, approved, ongoing, completed
-    road_status: str
-    population_size: str
-    is_public: bool
-    created_at: datetime
-    priority_level: str = "yellow"
+    road_status: str = "clear"
+    population_size: str = "medium"
+    is_public: bool = True
+    created_at: Optional[datetime] = None
+    priority_level: str = "Standard"
+
 
 class UpdateStatus(BaseModel):
     status: str

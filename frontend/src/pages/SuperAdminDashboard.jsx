@@ -21,6 +21,9 @@ export default function SuperAdminDashboard() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  
+  // Sidebar responsive state
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -41,7 +44,7 @@ export default function SuperAdminDashboard() {
 
   useEffect(() => {
     fetchData();
-    const intervalId = setInterval(fetchData, 30000); // auto-refresh every 30s
+    const intervalId = setInterval(fetchData, 30000);
     return () => clearInterval(intervalId);
   }, []);
 
@@ -66,7 +69,7 @@ export default function SuperAdminDashboard() {
         quantity: parseInt(newSupplyData.quantity, 10),
         unit: 'units'
       });
-      fetchData(); // refresh
+      fetchData();
     } catch (err) {
       alert(err.message || 'Failed to add supply');
     }
@@ -75,7 +78,7 @@ export default function SuperAdminDashboard() {
   const handleDeleteSupply = async (supply) => {
     try {
       await deleteInventoryItem(supply._id || supply.id);
-      fetchData(); // refresh
+      fetchData();
     } catch (err) {
       alert(err.message || 'Failed to delete supply');
     }
@@ -84,7 +87,7 @@ export default function SuperAdminDashboard() {
   const handleEditSupply = async (supply, updatedFields) => {
     try {
       await updateInventoryItem(supply._id || supply.id, updatedFields);
-      fetchData(); // refresh
+      fetchData();
     } catch (err) {
       alert(err.message || 'Failed to update supply');
     }
@@ -94,20 +97,23 @@ export default function SuperAdminDashboard() {
     <div className="min-h-screen bg-aura-bg flex font-sans text-white">
       <Sidebar 
         navItems={navItems} 
-        activeSessionText={currentUser ? `${currentUser.name}: Prime` : 'Admin'}
+        activeSessionText={currentUser ? `Admin: ${currentUser.full_name || currentUser.name || 'Prime'}` : 'Admin'}
         onLogout={handleLogout}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
       />
       
-      <div className="flex-1 ml-64 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col min-h-screen lg:ml-64 w-full">
         <Navbar 
           title="Super Admin Dashboard" 
           user={currentUser} 
           badgeText="CRITICAL OPS ACTIVE"
           badgeColorClass="border-white/20 text-white/70"
+          onMenuClick={() => setIsSidebarOpen(true)}
         />
         
-        <main className="flex-1 p-8 overflow-y-auto">
-          <div className="max-w-[1600px] mx-auto">
+        <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
+          <div className="max-w-[1600px] mx-auto space-y-6 lg:space-y-8">
             
             {error && (
               <div className="bg-aura-red/20 border border-aura-red text-white p-4 rounded mb-6 font-mono text-sm">
@@ -117,50 +123,52 @@ export default function SuperAdminDashboard() {
 
             <KPIRow supplies={supplies} requests={requests} />
 
-            <div className="grid grid-cols-12 gap-6 h-[500px] mb-6">
+            <div className="grid grid-cols-12 gap-6 mb-6">
               {/* Main Column */}
               <div className="col-span-12 xl:col-span-8 flex flex-col gap-6">
                 {/* Inventory Panel */}
-                <div className="flex-1 flex flex-col border border-white/5 rounded-lg p-6 bg-[#140D07] relative">
+                <div className="flex flex-col border border-white/5 rounded-lg p-4 lg:p-6 bg-[#140D07] relative min-h-[400px]">
                   {isLoading && supplies.length === 0 && (
-                    <div className="absolute inset-0 bg-[#140D07]/80 flex justify-center items-center z-10">
+                    <div className="absolute inset-0 bg-[#140D07]/80 flex justify-center items-center z-10 rounded-lg">
                       <div className="w-8 h-8 rounded-full border-2 border-aura-amber border-t-transparent animate-spin"></div>
                     </div>
                   )}
-                  <div className="flex justify-between items-start mb-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
                     <div>
-                      <h2 className="text-2xl font-bold font-sans mb-1 tracking-tight">Supply Inventory</h2>
-                      <p className="text-white/50 text-sm font-sans">Real-time status of disaster relief stock</p>
+                      <h2 className="text-xl lg:text-2xl font-bold font-sans mb-1 tracking-tight">Supply Inventory</h2>
+                      <p className="text-white/50 text-xs lg:text-sm font-sans">Real-time status of disaster relief stock</p>
                     </div>
-                    <Button onClick={() => setIsAddModalOpen(true)} className="py-2.5 px-6">
+                    <Button onClick={() => setIsAddModalOpen(true)} className="w-full sm:w-auto py-2.5 px-6 text-xs uppercase tracking-widest">
                       <Plus size={16} />
                       Add New Supply
                     </Button>
                   </div>
                   
-                  <InventoryTable 
-                    supplies={supplies} 
-                    onEdit={handleEditSupply}
-                    onDelete={handleDeleteSupply}
-                  />
+                  <div className="flex-1 overflow-x-auto">
+                    <InventoryTable 
+                      supplies={supplies} 
+                      onEdit={handleEditSupply}
+                      onDelete={handleDeleteSupply}
+                    />
+                  </div>
                 </div>
               </div>
 
               {/* Right Sidebar Column */}
-              <div className="col-span-12 xl:col-span-4 flex flex-col">
+              <div className="col-span-12 xl:col-span-4 h-full">
                 <IntelStream supplies={supplies} requests={requests} />
               </div>
             </div>
 
-            <div className="grid grid-cols-12 gap-6 h-[280px]">
-              <div className="col-span-12 md:col-span-6 xl:col-span-4">
+            <div className="grid grid-cols-12 gap-6">
+              <div className="col-span-12 lg:col-span-6 xl:col-span-4">
                 <PriorityDonut requests={requests} />
               </div>
-              <div className="col-span-12 md:col-span-6 xl:col-span-4">
+              <div className="col-span-12 lg:col-span-6 xl:col-span-4">
                 <GlobalLogistics requests={requests} />
               </div>
               <div className="col-span-12 xl:col-span-4 flex justify-end items-end pb-2">
-                 <Button variant="secondary" className="w-full py-4 text-xs tracking-widest text-white/70 border-white/10 hover:border-white/30 bg-[#140D07] hover:bg-[#1A140F] hover:text-white transition-colors uppercase font-mono">
+                 <Button variant="secondary" className="w-full py-5 text-[10px] tracking-[0.3em] text-white/70 border-white/10 hover:border-white/30 bg-[#140D07] hover:bg-[#1A140F] hover:text-white transition-all uppercase font-mono shadow-lg">
                    View Historical Analytics
                  </Button>
               </div>

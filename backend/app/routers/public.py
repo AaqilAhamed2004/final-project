@@ -38,7 +38,8 @@ async def book_request(data: BookingCreate, current_user: dict = Depends(require
         booking_dict["booked_at"] = datetime.utcnow()
         
         # Save to a new collection
-        db["bookings"].insert_one(booking_dict)
+        bookings_col.insert_one(booking_dict)
+
         
         # Update request status in main collection
         requests_col.update_one(

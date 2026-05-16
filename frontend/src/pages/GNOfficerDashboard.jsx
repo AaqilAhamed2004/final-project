@@ -21,11 +21,13 @@ export default function GNOfficerDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  
+  // Mobile responsive state
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const fetchMyRequests = async () => {
     try {
       const data = await getMyRequests();
-      // Sort by newest first
       setRequests(data.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
     } catch (err) {
       console.error("Failed to fetch requests", err);
@@ -54,7 +56,7 @@ export default function GNOfficerDashboard() {
 
   const pendingCount = requests.filter(r => r.status === 'pending').length;
   const transitCount = requests.filter(r => r.status === 'approved').length;
-  const criticalCount = requests.filter(r => r.prolog_analysis?.priority_level === 'red').length;
+  const criticalCount = requests.filter(r => r.priority_level === 'Critical').length;
 
   const handleRequestSubmit = async (data) => {
     setIsSubmitting(true);
@@ -62,7 +64,7 @@ export default function GNOfficerDashboard() {
       const newRequest = await createRequest(data);
       setSubmittedRequest(newRequest);
       setIsModalOpen(true);
-      fetchMyRequests(); // Refresh table
+      fetchMyRequests();
     } catch (err) {
       alert(err.message || 'Error initializing deployment.');
     } finally {
@@ -74,26 +76,29 @@ export default function GNOfficerDashboard() {
     <div className="min-h-screen bg-aura-bg flex font-sans text-white">
       <Sidebar 
         navItems={navItems} 
-        activeSessionText={currentUser ? `${currentUser.role.replace('_', ' ')}: ${currentUser.name}` : 'GN Officer'}
+        activeSessionText={currentUser ? `${currentUser.role.replace('_', ' ')}: ${currentUser.full_name || currentUser.name || 'Operator'}` : 'GN Officer'}
         onLogout={handleLogout}
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
       />
       
-      <div className="flex-1 ml-64 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col min-h-screen lg:ml-64 w-full overflow-x-hidden">
         <Navbar 
           title="Relief Operations" 
           user={currentUser} 
+          onMenuClick={() => setIsSidebarOpen(true)}
         />
         
-        <main className="flex-1 p-8 overflow-y-auto">
-          <div className="max-w-[1400px] mx-auto grid grid-cols-12 gap-8">
+        <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
+          <div className="max-w-[1400px] mx-auto grid grid-cols-12 gap-6 lg:gap-8">
             
             {/* Left Column - Request Form */}
-            <div className="col-span-12 lg:col-span-4 h-[calc(100vh-144px)] flex flex-col">
+            <div className="col-span-12 lg:col-span-5 xl:col-span-4 order-2 lg:order-1">
               <RequestForm onSubmit={handleRequestSubmit} isSubmitting={isSubmitting} />
             </div>
 
             {/* Right Column */}
-            <div className="col-span-12 lg:col-span-8 flex flex-col gap-6">
+            <div className="col-span-12 lg:col-span-7 xl:col-span-8 flex flex-col gap-6 order-1 lg:order-2">
               {error && (
                 <div className="bg-aura-red/20 border border-aura-red text-white p-3 rounded font-mono text-xs">
                   {error}
@@ -101,7 +106,7 @@ export default function GNOfficerDashboard() {
               )}
               
               {/* Stats Row */}
-              <div className="grid grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6">
                 <StatCard 
                   title="PENDING APPROVAL" 
                   value={isLoading ? '-' : pendingCount.toString()} 
@@ -123,7 +128,9 @@ export default function GNOfficerDashboard() {
               </div>
 
               {/* Active Log */}
-              <ActiveLog requests={requests} />
+              <div className="overflow-x-auto">
+                <ActiveLog requests={requests} />
+              </div>
 
               {/* Live Tracker */}
               <LiveTracker />

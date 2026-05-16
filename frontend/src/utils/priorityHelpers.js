@@ -29,10 +29,14 @@ export const getStatusColor = (status) => {
   switch (status) {
     case STATUS_TYPES.PENDING:   return 'text-gray-400 border-gray-400';
     case STATUS_TYPES.APPROVED:  return 'text-aura-amber border-aura-amber';
+    case STATUS_TYPES.ONGOING:   return 'text-blue-400 border-blue-400';
+    case STATUS_TYPES.COMPLETED: return 'text-green-500 border-green-500';
     case STATUS_TYPES.FULFILLED: return 'text-green-500 border-green-500';
+    case STATUS_TYPES.CANCELLED: return 'text-aura-red border-aura-red';
     default:                     return 'text-gray-400 border-gray-400';
   }
 };
+
 
 export const formatRequestId = (id) => {
   return id.startsWith('#') ? id : `#${id}`;

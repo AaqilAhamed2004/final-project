@@ -113,7 +113,10 @@ export default function App() {
               <Navigate to="/login" replace />
             </ProtectedRoute>
           } />
+          {/* Catch-all: redirect unknown routes to root (RootRedirect handles role-based dispatch) */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+
       </BrowserRouter>
     </AuthProvider>
   )

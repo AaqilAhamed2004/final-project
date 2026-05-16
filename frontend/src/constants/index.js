@@ -21,6 +21,9 @@ export const SUPPLY_CATEGORIES = {
 export const STATUS_TYPES = {
   PENDING:   'pending',
   APPROVED:  'approved',
+  ONGOING:   'ongoing',
+  COMPLETED: 'completed',
   FULFILLED: 'fulfilled',
   CANCELLED: 'cancelled',
 };
+

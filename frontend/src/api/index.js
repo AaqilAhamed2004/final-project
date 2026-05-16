@@ -18,10 +18,13 @@ async function apiFetch(endpoint, options = {}) {
     if (res.status === 401) {
       localStorage.removeItem('aura_token')
       localStorage.removeItem('aura_user')
+      // Dispatch event so AuthContext can reactively clear state
+      window.dispatchEvent(new Event('aura_logout'))
       window.location.href = '/login'
     }
     throw new Error(data.detail || 'An API error occurred')
   }
+
   return data
 }
 

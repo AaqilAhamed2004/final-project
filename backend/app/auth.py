@@ -14,9 +14,14 @@ import os
 
 load_dotenv()
 
-SECRET_KEY  = os.getenv("SECRET_KEY", "fallback-unsafe-key")
+SECRET_KEY  = os.getenv("SECRET_KEY", "fallback-unsafe-key-change-me-immediately-32chars+")
 ALGORITHM   = os.getenv("ALGORITHM", "HS256")
 EXPIRE_MINS = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", 480))
+
+if SECRET_KEY == "fallback-unsafe-key-change-me-immediately-32chars+":
+    import warnings
+    warnings.warn("[SECURITY] SECRET_KEY is using the fallback value. Set a strong key in your .env file!", stacklevel=2)
+
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

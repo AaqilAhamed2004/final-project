@@ -20,7 +20,8 @@ async def create_request(data: ReliefRequestCreate, background_tasks: Background
         req_dict["creator_id"] = str(current_user["_id"])
         req_dict["status"] = "pending"
         req_dict["created_at"] = datetime.utcnow()
-        req_dict["priority_level"] = "yellow"  # Default before AI analysis
+        req_dict["priority_level"] = "Standard"  # Default before AI analysis (matches frontend PRIORITY_LEVELS.STANDARD)
+
         
         result = requests_col.insert_one(req_dict)
         

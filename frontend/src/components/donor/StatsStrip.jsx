@@ -1,13 +1,14 @@
 import React from 'react';
 import PropTypes from 'prop-types';
+import { PRIORITY_LEVELS } from '../../constants';
 
 export default function StatsStrip({ requests }) {
   const activeRequests = requests.filter(r => r.status === 'pending');
   
-  const activeCount = activeRequests.length;
-  const criticalCount = activeRequests.filter(r => r.prolog_analysis?.priority_level === 'red').length;
-  const moderateCount = activeRequests.filter(r => r.prolog_analysis?.priority_level === 'orange').length;
-  const lowCount = activeRequests.filter(r => r.prolog_analysis?.priority_level === 'yellow').length;
+  const activeCount    = activeRequests.length;
+  const criticalCount  = activeRequests.filter(r => r.priority_level === PRIORITY_LEVELS.CRITICAL).length;
+  const moderateCount  = activeRequests.filter(r => r.priority_level === PRIORITY_LEVELS.URGENT).length;
+  const lowCount       = activeRequests.filter(r => r.priority_level === PRIORITY_LEVELS.STANDARD).length;
 
   return (
     <div className="flex gap-4 mb-8">

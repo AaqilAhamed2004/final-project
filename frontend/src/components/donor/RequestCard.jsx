@@ -10,7 +10,9 @@ export default function RequestCard({ request, onBook }) {
   // Use _id for displaying, fallback to id for old mock data just in case
   const reqId = request._id || request.id;
   const itemName = request.supply_type || request.itemName;
-  const priority = request.prolog_analysis?.priority_level || request.priority;
+  // priority_level is written directly on the request document by the AI engine
+  const priority = request.priority_level || null;
+
   const location = request.location_name || request.location;
   const assignedOfficer = request.gn_officer_id || request.assignedOfficer || 'System';
   const officerAvatar = request.officerAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${assignedOfficer}&backgroundColor=1C1309`;

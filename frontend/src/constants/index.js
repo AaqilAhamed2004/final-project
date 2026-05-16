@@ -4,22 +4,23 @@ export const ROLES = {
   SUPER_ADMIN: 'super_admin',
 };
 
+// These MUST match the strings written to MongoDB by prolog_worker_cli.py
 export const PRIORITY_LEVELS = {
-  RED: 'red',       // was CRITICAL
-  ORANGE: 'orange', // was MODERATE
-  YELLOW: 'yellow', // was LOW
+  CRITICAL: 'Critical',
+  URGENT:   'Urgent',
+  STANDARD: 'Standard',
 };
 
 export const SUPPLY_CATEGORIES = {
   MEDICINE: 'medicine',
-  FOOD: 'food',
-  SHELTER: 'shelter',
-  OTHER: 'other',
+  FOOD:     'food',
+  SHELTER:  'shelter',
+  OTHER:    'other',
 };
 
 export const STATUS_TYPES = {
-  PENDING: 'pending',
-  APPROVED: 'approved',     // was ASSIGNED
-  FULFILLED: 'fulfilled',   // was DELIVERED
-  CANCELLED: 'cancelled',   // new
+  PENDING:   'pending',
+  APPROVED:  'approved',
+  FULFILLED: 'fulfilled',
+  CANCELLED: 'cancelled',
 };

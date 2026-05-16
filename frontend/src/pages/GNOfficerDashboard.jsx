@@ -96,8 +96,8 @@ export default function GNOfficerDashboard() {
     { path: '/requests', label: 'Relief Requests', icon: FileStack },
     { path: '/inventory', label: 'Inventory', icon: Package },
     { path: '/logistics', label: 'Logistics', icon: Truck },
-    { path: '/users', label: 'User Management', icon: Users },
   ];
+
 
   const pendingCount = requests.filter(r => r.status === 'pending').length;
   const transitCount = requests.filter(r => ['approved', 'ongoing'].includes(r.status)).length;

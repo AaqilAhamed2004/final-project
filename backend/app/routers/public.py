@@ -31,7 +31,7 @@ async def get_stats():
     }
 
 @router.post("/book", response_model=dict)
-async def book_request(data: BookingCreate, current_user: dict = Depends(require_role(["donor"]))):
+async def book_request(data: BookingCreate, current_user: dict = Depends(require_role(["donor", "gn_officer", "super_admin"]))):
     try:
         booking_dict = data.model_dump()
         booking_dict["donor_id"] = str(current_user["_id"])
@@ -53,7 +53,8 @@ async def book_request(data: BookingCreate, current_user: dict = Depends(require
         raise HTTPException(status_code=500, detail="Internal Server Error during booking")
 
 @router.get("/my-contributions", response_model=list[dict])
-async def get_my_contributions(current_user: dict = Depends(require_role(["donor"]))):
+async def get_my_contributions(current_user: dict = Depends(require_role(["donor", "gn_officer", "super_admin"]))):
+
     bookings = list(bookings_col.find({"donor_id": str(current_user["_id"])}).sort("booked_at", -1))
     results = []
     for b in bookings:

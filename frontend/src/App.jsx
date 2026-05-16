@@ -9,6 +9,10 @@ import PriorityResultScreen from './pages/PriorityResultScreen'
 import AdminInventoryPage from './pages/AdminInventoryPage'
 import AdminRequestsPage from './pages/AdminRequestsPage'
 import DonorContributionsPage from './pages/DonorContributionsPage'
+import AdminLogisticsPage from './pages/AdminLogisticsPage'
+import AdminUsersPage from './pages/AdminUsersPage'
+import ProfilePage from './pages/ProfilePage'
+
 
 
 
@@ -16,7 +20,8 @@ function ProtectedRoute({ children, allowedRoles }) {
   const { user, token } = useAuth()
   if (!token) return <Navigate to="/login" replace />
   if (allowedRoles && !allowedRoles.includes(user?.role))
-    return <Navigate to="/login" replace />
+    return <Navigate to="/" replace />
+
   return children
 }
 
@@ -60,6 +65,25 @@ export default function App() {
             </ProtectedRoute>
           } />
 
+          <Route path="/logistics" element={
+            <ProtectedRoute allowedRoles={['super_admin', 'gn_officer']}>
+              <AdminLogisticsPage />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/users" element={
+            <ProtectedRoute allowedRoles={['super_admin']}>
+              <AdminUsersPage />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/profile" element={
+            <ProtectedRoute>
+              <ProfilePage />
+            </ProtectedRoute>
+          } />
+
+
 
 
           <Route path="/dashboard/gn" element={
@@ -75,10 +99,11 @@ export default function App() {
           } />
 
           <Route path="/contributions" element={
-            <ProtectedRoute allowedRoles={['donor']}>
+            <ProtectedRoute allowedRoles={['donor', 'gn_officer', 'super_admin']}>
               <DonorContributionsPage />
             </ProtectedRoute>
           } />
+
 
           
           {/* Fallback route for legacy /dashboard */}

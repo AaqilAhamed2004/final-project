@@ -8,6 +8,8 @@ import DonorReliefBoard from './pages/DonorReliefBoard'
 import PriorityResultScreen from './pages/PriorityResultScreen'
 import AdminInventoryPage from './pages/AdminInventoryPage'
 import AdminRequestsPage from './pages/AdminRequestsPage'
+import DonorContributionsPage from './pages/DonorContributionsPage'
+
 
 
 function ProtectedRoute({ children, allowedRoles }) {
@@ -71,6 +73,13 @@ export default function App() {
               <DonorReliefBoard />
             </ProtectedRoute>
           } />
+
+          <Route path="/contributions" element={
+            <ProtectedRoute allowedRoles={['donor']}>
+              <DonorContributionsPage />
+            </ProtectedRoute>
+          } />
+
           
           {/* Fallback route for legacy /dashboard */}
           <Route path="/dashboard" element={

@@ -51,3 +51,24 @@ async def book_request(data: BookingCreate, current_user: dict = Depends(require
     except Exception as e:
         print(f"[PUBLIC ERROR] Booking failed: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error during booking")
+
+@router.get("/my-contributions", response_model=list[dict])
+async def get_my_contributions(current_user: dict = Depends(require_role(["donor"]))):
+    bookings = list(bookings_col.find({"donor_id": str(current_user["_id"])}).sort("booked_at", -1))
+    results = []
+    for b in bookings:
+        req = requests_col.find_one({"_id": ObjectId(b["request_id"])})
+        if req:
+            results.append({
+                "booking_id": str(b["_id"]),
+                "request_id": str(req["_id"]),
+                "title": req.get("title", "Relief Request"),
+                "location": req.get("location", "Unknown"),
+                "status": req.get("status", "pending"),
+                "priority_level": req.get("priority_level", "Standard"),
+                "booked_at": b["booked_at"],
+                "items": req.get("items", []),
+                "notes": b.get("notes", "")
+            })
+    return results
+

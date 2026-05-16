@@ -9,7 +9,10 @@ import RequestCard from '../components/donor/RequestCard';
 import Modal from '../components/common/Modal';
 import Button from '../components/common/Button';
 import { CheckCircle2, User } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+
+
+
 
 export default function DonorReliefBoard() {
   const { currentUser, logout } = useAuth();
@@ -79,9 +82,10 @@ export default function DonorReliefBoard() {
         onLogout={handleLogout}
       >
         <span className="text-aura-amber border-b-2 border-aura-amber pb-1 cursor-pointer font-bold whitespace-nowrap">Relief Board</span>
-        <span className="hover:text-white cursor-pointer transition-colors whitespace-nowrap">My Contributions</span>
+        <Link to="/contributions" className="hover:text-white cursor-pointer transition-colors whitespace-nowrap">My Contributions</Link>
         <span className="hover:text-white cursor-pointer transition-colors whitespace-nowrap">Impact Map</span>
       </Navbar>
+
       
       <main className="flex-1 max-w-[1400px] w-full mx-auto p-4 lg:p-8 relative">
         <div className="mb-6 lg:mb-10">

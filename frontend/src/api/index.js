@@ -63,3 +63,4 @@ export const deleteInventoryItem = (id) => apiFetch(`/api/inventory/${id}`, { me
 export const getPublicBoard = ()          => apiFetch('/api/public/board')
 export const getPublicStats = ()          => apiFetch('/api/public/stats')
 export const bookRequest    = (id, notes) => apiFetch('/api/public/book', { method: 'POST', body: JSON.stringify({ request_id: id, notes }) })
+export const getMyContributions = ()     => apiFetch('/api/public/my-contributions')

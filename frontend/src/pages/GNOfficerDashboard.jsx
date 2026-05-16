@@ -107,7 +107,8 @@ export default function GNOfficerDashboard() {
     <div className="min-h-screen bg-aura-bg flex font-sans text-white overflow-hidden">
       <Sidebar 
         navItems={navItems} 
-        activeSessionText={currentUser ? `${currentUser.role.replace('_', ' ')}: ${currentUser.full_name || currentUser.name || 'Operator'}` : 'GN Officer'}
+        activeSessionText={currentUser ? `${currentUser.role?.replace('_', ' ')}: ${currentUser.full_name || currentUser.name || 'Operator'}` : 'GN Officer'}
+
         onLogout={handleLogout}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}

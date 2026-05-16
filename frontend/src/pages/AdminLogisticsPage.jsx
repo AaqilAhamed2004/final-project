@@ -12,18 +12,29 @@ export default function AdminLogisticsPage() {
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
+  const role = currentUser?.role;
+
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  const navItems = [
+  const navItems = role === 'gn_officer' ? [
+    { path: '/dashboard/gn', label: 'Command Center', icon: LayoutDashboard },
+    { path: '/requests', label: 'Relief Requests', icon: FileStack },
+    { path: '/inventory', label: 'Inventory', icon: Package },
+    { path: '/logistics', label: 'Logistics', icon: Truck },
+  ] : [
     { path: '/dashboard/admin', label: 'Command Center', icon: LayoutDashboard },
     { path: '/inventory', label: 'Inventory', icon: Package },
     { path: '/requests', label: 'Relief Requests', icon: FileStack },
     { path: '/logistics', label: 'Logistics', icon: Truck },
     { path: '/users', label: 'User Management', icon: Users },
   ];
+
+  const sessionText = role === 'gn_officer'
+    ? `GN Officer: ${currentUser?.full_name || 'Operator'}`
+    : `Admin: ${currentUser?.full_name || 'Prime'}`;
 
   const fleetData = [
     { id: '#FL-001', type: 'Convoy Alpha', route: 'North Sector → HQ-02', task: 'Medical Resupply', status: 'Active', icon: Truck },
@@ -36,7 +47,7 @@ export default function AdminLogisticsPage() {
     <div className="min-h-screen bg-aura-bg flex font-sans text-white">
       <Sidebar 
         navItems={navItems} 
-        activeSessionText={currentUser ? `Admin: ${currentUser.full_name || currentUser.name || 'Prime'}` : 'Admin'}
+        activeSessionText={currentUser ? sessionText : 'Personnel'}
         onLogout={handleLogout}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}

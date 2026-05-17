@@ -73,7 +73,7 @@ class InventoryItem(BaseModel):
     category: str
     quantity: int
     prolog_item_key: Optional[str] = None
-    location: str
+    location: str = "Main Hub"
     warehouse: str = "Main Hub"
     bin_location: str = "A-1"
     condition: str = "New"

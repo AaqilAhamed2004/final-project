@@ -19,10 +19,18 @@ export default function AddSupplyModal({ isOpen, onClose, onAdd }) {
 
   const handleSubmit = () => {
     if (name && quantity) {
+      const generatedKey = name
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '');
+
       onAdd({
+        item_name: name,
         name,
         category,
-        quantity: parseInt(quantity, 10)
+        quantity: parseInt(quantity, 10),
+        location: "Main Hub",
+        prolog_item_key: generatedKey
       });
       setName('');
       setQuantity('');

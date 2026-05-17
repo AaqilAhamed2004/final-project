@@ -25,7 +25,7 @@ async def add_item(data: InventoryItem, current_user: dict = Depends(require_rol
         raise HTTPException(status_code=500, detail="Internal Server Error adding item")
 
 @router.patch("/{id}", response_model=InventoryItemResponse)
-async def update_item(id: str, data: dict, current_user: dict = Depends(require_role(["super_admin"]))):
+async def update_item(id: str, data: dict, current_user: dict = Depends(require_role(["gn_officer", "super_admin"]))):
     inventory_col.update_one({"_id": ObjectId(id)}, {"$set": data})
     item = inventory_col.find_one({"_id": ObjectId(id)})
     if not item:
@@ -34,7 +34,7 @@ async def update_item(id: str, data: dict, current_user: dict = Depends(require_
     return item
 
 @router.delete("/{id}")
-async def delete_item(id: str, current_user: dict = Depends(require_role(["super_admin"]))):
+async def delete_item(id: str, current_user: dict = Depends(require_role(["gn_officer", "super_admin"]))):
     result = inventory_col.delete_one({"_id": ObjectId(id)})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Item not found")

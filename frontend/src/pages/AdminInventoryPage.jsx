@@ -41,6 +41,32 @@ export default function AdminInventoryPage() {
     navigate('/login');
   };
 
+  const handleEdit = async (item) => {
+    const newQtyStr = prompt(`Enter new quantity for ${item.item_name}:`, item.quantity);
+    if (newQtyStr === null) return;
+    const newQty = parseInt(newQtyStr, 10);
+    if (isNaN(newQty)) {
+      alert("Please enter a valid number");
+      return;
+    }
+    try {
+      await updateInventoryItem(item._id, { quantity: newQty });
+      await fetchSupplies();
+    } catch (err) {
+      alert("Failed to update item: " + err.message);
+    }
+  };
+
+  const handleDelete = async (item) => {
+    if (!window.confirm(`Are you sure you want to delete ${item.item_name} from inventory?`)) return;
+    try {
+      await deleteInventoryItem(item._id);
+      await fetchSupplies();
+    } catch (err) {
+      alert("Failed to delete item: " + err.message);
+    }
+  };
+
   const navItems = role === 'gn_officer' ? [
     { path: '/dashboard/gn', label: 'Command Center', icon: LayoutDashboard },
     { path: '/requests', label: 'Relief Requests', icon: FileStack },
@@ -179,8 +205,8 @@ export default function AdminInventoryPage() {
                           </td>
                           <td className="py-5 px-6">
                             <div className="flex items-center gap-4 opacity-30 group-hover:opacity-100 transition-opacity">
-                              <button className="text-white/60 hover:text-white transition-colors" title="Edit Item"><Edit2 size={14} /></button>
-                              <button className="text-white/60 hover:text-aura-red transition-colors" title="Delete Item"><Trash2 size={14} /></button>
+                              <button onClick={() => handleEdit(item)} className="text-white/60 hover:text-white transition-colors" title="Edit Item"><Edit2 size={14} /></button>
+                              <button onClick={() => handleDelete(item)} className="text-white/60 hover:text-aura-red transition-colors" title="Delete Item"><Trash2 size={14} /></button>
                               <button className="text-white/60 hover:text-aura-amber transition-colors" title="Audit History"><History size={14} /></button>
                             </div>
                           </td>

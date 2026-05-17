@@ -15,8 +15,8 @@ export default function PriorityResult({ requestData, onClose, isModal = true })
   };
 
   const containerClasses = isModal 
-    ? "flex flex-col p-8 bg-aura-card border border-white/10" 
-    : "flex flex-col p-8 max-w-4xl mx-auto mt-10 bg-aura-bg border border-white/10 rounded-xl shadow-2xl";
+    ? "flex flex-col p-8 bg-aura-card border border-aura-border" 
+    : "flex flex-col p-8 max-w-4xl mx-auto mt-10 bg-aura-bg border border-aura-border rounded-xl shadow-2xl";
 
   return (
     <div className={containerClasses}>
@@ -28,25 +28,25 @@ export default function PriorityResult({ requestData, onClose, isModal = true })
           </div>
           <h1 className="text-lg font-bold tracking-widest uppercase">AURA</h1>
         </div>
-        <div className="flex items-center gap-2 font-mono text-[10px] tracking-widest text-white/50">
+        <div className="flex items-center gap-2 font-mono text-[10px] tracking-widest text-aura-text-muted">
           NETWORK STATUS: <span className="text-aura-amber">SECURE_NODE_04</span>
         </div>
       </div>
 
       {/* Confirmed Icon */}
       <div className="flex flex-col items-center justify-center mb-10 mt-2">
-        <div className="w-20 h-20 mb-4 rounded-xl border border-aura-amber/30 bg-[#2A1D0E] flex items-center justify-center shadow-[0_0_30px_rgba(245,158,11,0.15)] relative">
+        <div className="w-20 h-20 mb-4 rounded-xl border border-aura-accent/30 bg-aura-accent-muted flex items-center justify-center shadow-[0_0_30px_var(--color-accent-muted)] relative">
           <div className="absolute inset-2 border border-aura-amber/20 rounded-lg"></div>
           <CheckCircle2 size={32} className="text-aura-amber relative z-10" />
         </div>
         <h2 className="text-4xl font-bold text-aura-amber mb-1 tracking-tight">Confirmed</h2>
-        <p className="text-white/80 text-lg font-sans">Stored in Database</p>
+        <p className="text-aura-text text-lg font-sans">Stored in Database</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         <div className="flex flex-col gap-4">
-          <Card className="py-5 px-6 border-white/5 bg-[#140D07]">
-            <div className="text-[10px] font-mono tracking-widest text-white/50 mb-1.5 uppercase">Request ID</div>
+          <Card className="py-5 px-6 border-aura-border bg-aura-surface">
+            <div className="text-[10px] font-mono tracking-widest text-aura-text-muted mb-1.5 uppercase">Request ID</div>
             <div className="text-2xl font-mono font-bold tracking-wider">{data._id || data.id}</div>
           </Card>
           
@@ -63,14 +63,14 @@ export default function PriorityResult({ requestData, onClose, isModal = true })
           <Map size={16} />
           View Tactical Map
         </Button>
-        <Button variant="secondary" className="py-4 text-xs text-white border-white/20 hover:bg-white/5 hover:text-white" onClick={onClose}>
+        <Button variant="secondary" className="py-4 text-xs text-aura-text border-aura-border hover:bg-aura-surface hover:text-aura-text" onClick={onClose}>
           <Download size={16} />
           Export Manifest
         </Button>
       </div>
 
       {/* Footer */}
-      <div className="flex justify-between items-end text-[8px] font-mono text-white/30 uppercase tracking-[0.2em] pt-4 border-t border-white/5">
+      <div className="flex justify-between items-end text-[8px] font-mono text-aura-text-faint uppercase tracking-[0.2em] pt-4 border-t border-aura-border">
         <div className="space-y-1">
           <div>COORDINATES: 34.0522° N, 118.2437° W</div>
           <div>TIMESTAMP: {formatTimestamp(new Date().toISOString())}</div>

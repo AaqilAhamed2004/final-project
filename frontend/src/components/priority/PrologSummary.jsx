@@ -13,19 +13,19 @@ export default function PrologSummary({ analysis, summaryLines }) {
   ];
 
   return (
-    <Card className="h-full border-white/5 bg-[#1A140F] flex flex-col justify-between py-5 px-6">
+    <Card className="h-full border-aura-border bg-aura-surface flex flex-col justify-between py-5 px-6">
       <div>
-        <div className="flex items-center gap-2 mb-5 text-[10px] font-mono tracking-widest uppercase text-white/70">
+        <div className="flex items-center gap-2 mb-5 text-[10px] font-mono tracking-widest uppercase text-aura-text-muted">
           <Settings size={14} className="text-aura-amber" />
           Prolog Engine: Logic Summary
         </div>
-        <div className="space-y-3.5 text-[11px] font-mono text-white/60 leading-relaxed tracking-wide">
+        <div className="space-y-3.5 text-[11px] font-mono text-aura-text-faint leading-relaxed tracking-wide">
           {lines.map((line, index) => (
             <p key={index}>&gt; {line}</p>
           ))}
         </div>
       </div>
-      <div className="flex justify-between mt-8 text-[8px] font-mono text-white/30 uppercase tracking-widest">
+      <div className="flex justify-between mt-8 text-[8px] font-mono text-aura-text-faint uppercase tracking-widest">
         <span>PROLOG_KERNEL_V4.2.1</span>
         <span className="text-aura-amber">LOGIC_STABLE</span>
       </div>

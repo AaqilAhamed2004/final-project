@@ -22,12 +22,12 @@ export default function RequestCard({ request, onBook }) {
       <div>
         <div className="flex justify-between items-start mb-5">
           <Badge priority={priority} />
-          <span className="text-white/50 text-[11px] font-mono font-bold tracking-widest" title={reqId}>REQ {formatRequestId(reqId?.slice(-6) || 'N/A')}</span>
+          <span className="text-aura-text-muted text-[11px] font-mono font-bold tracking-widest" title={reqId}>REQ {formatRequestId(reqId?.slice(-6) || 'N/A')}</span>
         </div>
         
-        <h3 className="text-[22px] font-bold font-sans mb-2 tracking-tight text-white/90 leading-tight">{itemName}</h3>
+        <h3 className="text-[22px] font-bold font-sans mb-2 tracking-tight text-aura-text leading-tight">{itemName}</h3>
         
-        <div className="flex items-center gap-2 text-white/50 text-sm font-sans mb-8">
+        <div className="flex items-center gap-2 text-aura-text-muted text-sm font-sans mb-8">
           <MapPin size={16} />
           {location}
         </div>
@@ -35,10 +35,10 @@ export default function RequestCard({ request, onBook }) {
 
       <div className="mt-auto">
         <div className="flex items-center gap-4 mb-6">
-          <img src={officerAvatar} alt={assignedOfficer} className="w-10 h-10 rounded border border-white/10 bg-[#1C1309]" />
+          <img src={officerAvatar} alt={assignedOfficer} className="w-10 h-10 rounded border border-aura-border bg-aura-surface" />
           <div>
-            <div className="text-[9px] font-mono tracking-widest uppercase text-white/50 mb-0.5">Assigned Officer</div>
-            <div className="text-sm font-sans text-white/90 truncate max-w-[120px]" title={assignedOfficer}>GN Officer {assignedOfficer.slice(-6)}</div>
+            <div className="text-[9px] font-mono tracking-widest uppercase text-aura-text-muted mb-0.5">Assigned Officer</div>
+            <div className="text-sm font-sans text-aura-text truncate max-w-[120px]" title={assignedOfficer}>GN Officer {assignedOfficer.slice(-6)}</div>
           </div>
         </div>
 
@@ -53,7 +53,7 @@ export default function RequestCard({ request, onBook }) {
         ) : request.status === 'completed' ? (
           <Button 
             variant="secondary" 
-            className="w-full py-3 opacity-40 border-white/10 text-white/50 cursor-not-allowed hover:bg-transparent"
+            className="w-full py-3 opacity-40 border-aura-border text-aura-text-muted cursor-not-allowed hover:bg-transparent"
             disabled
           >
             Completed

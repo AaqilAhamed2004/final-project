@@ -19,13 +19,13 @@ export default function PriorityDonut({ requests }) {
   const low = activeRequests.filter(r => r.priority_level === PRIORITY_LEVELS.STANDARD).length;
 
   const data = [
-    { name: 'Critical', value: critical, color: '#DC2626' }, // text-aura-red
-    { name: 'Moderate', value: moderate, color: '#EA580C' }, // text-aura-orange
-    { name: 'Low', value: low, color: '#CA8A04' }, // text-aura-yellow
+    { name: 'Critical', value: critical, color: 'var(--color-red)' }, // text-aura-red
+    { name: 'Moderate', value: moderate, color: 'var(--color-orange)' }, // text-aura-orange
+    { name: 'Low', value: low, color: 'var(--color-yellow)' }, // text-aura-yellow
   ];
 
   return (
-    <Card className="flex flex-col h-full bg-[#140D07] border-white/5 p-6 min-h-[320px]">
+    <Card className="flex flex-col h-full p-6 min-h-[320px]">
       <h3 className="text-xl font-bold font-sans mb-6 tracking-tight">Priority Distribution</h3>
       
       <div className="flex-1 flex flex-col sm:flex-row items-center justify-center gap-8 lg:gap-12">
@@ -33,8 +33,8 @@ export default function PriorityDonut({ requests }) {
         <div className="relative w-[180px] h-[180px] flex items-center justify-center">
           {/* Central Label - Now perfectly aligned inside the chart container */}
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-10">
-            <div className="text-3xl lg:text-4xl font-bold font-sans tracking-tighter text-white/90 leading-none">{total}</div>
-            <div className="text-[10px] font-mono tracking-[0.2em] text-white/30 uppercase mt-1">Total</div>
+            <div className="text-3xl lg:text-4xl font-bold font-sans tracking-tighter text-aura-text leading-none">{total}</div>
+            <div className="text-[10px] font-mono tracking-[0.2em] text-aura-text-faint uppercase mt-1">Total</div>
           </div>
 
           {isMounted && total > 0 ? (
@@ -58,7 +58,7 @@ export default function PriorityDonut({ requests }) {
               </Pie>
             </PieChart>
           ) : (
-            <div className="w-full h-full rounded-full border-[6px] border-white/5 flex items-center justify-center text-white/10 font-mono text-[9px] uppercase tracking-[0.3em]">
+            <div className="w-full h-full rounded-full border-[6px] border-aura-border flex items-center justify-center text-aura-text-faint font-mono text-[9px] uppercase tracking-[0.3em]">
               {total === 0 ? 'No Data' : 'Initializing'}
             </div>
           )}
@@ -74,12 +74,12 @@ export default function PriorityDonut({ requests }) {
               ></div>
               <div className="flex flex-col">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold tracking-widest text-white/80 uppercase">{item.name}</span>
-                  <span className="text-[10px] font-mono text-white/30 tracking-wider">
+                  <span className="text-xs font-mono font-bold tracking-widest text-aura-text-muted uppercase">{item.name}</span>
+                  <span className="text-[10px] font-mono text-aura-text-faint tracking-wider">
                     {total ? Math.round((item.value/total)*100) : 0}%
                   </span>
                 </div>
-                <div className="text-[9px] font-mono text-white/20 uppercase tracking-tighter">
+                <div className="text-[9px] font-mono text-aura-text-faint uppercase tracking-tighter">
                   {item.value} Tactical Requests
                 </div>
               </div>

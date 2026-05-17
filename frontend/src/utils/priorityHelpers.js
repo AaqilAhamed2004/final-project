@@ -2,6 +2,7 @@ import { PRIORITY_LEVELS, STATUS_TYPES } from '../constants';
 
 /**
  * Maps a priority_level string from the API to Tailwind CSS classes.
+ * Uses aura-* theme tokens — automatically adapts to dark/light mode.
  * Accepts: "Critical", "Urgent", "Standard" (from MongoDB/AI engine)
  */
 export const getPriorityColor = (priority) => {
@@ -9,7 +10,7 @@ export const getPriorityColor = (priority) => {
     case PRIORITY_LEVELS.CRITICAL: return 'text-aura-red bg-aura-red/10 border border-aura-red/30';
     case PRIORITY_LEVELS.URGENT:   return 'text-aura-orange bg-aura-orange/10 border border-aura-orange/30';
     case PRIORITY_LEVELS.STANDARD: return 'text-aura-yellow bg-aura-yellow/10 border border-aura-yellow/30';
-    default:                       return 'text-gray-400 bg-gray-400/10 border border-gray-400/30';
+    default:                       return 'text-aura-text-muted bg-aura-surface border border-aura-border';
   }
 };
 
@@ -27,13 +28,13 @@ export const getPriorityLabel = (priority) => {
 
 export const getStatusColor = (status) => {
   switch (status) {
-    case STATUS_TYPES.PENDING:   return 'text-gray-400 border-gray-400';
-    case STATUS_TYPES.APPROVED:  return 'text-aura-amber border-aura-amber';
-    case STATUS_TYPES.ONGOING:   return 'text-blue-400 border-blue-400';
-    case STATUS_TYPES.COMPLETED: return 'text-green-500 border-green-500';
-    case STATUS_TYPES.FULFILLED: return 'text-green-500 border-green-500';
+    case STATUS_TYPES.PENDING:   return 'text-aura-text-muted border-aura-border-strong';
+    case STATUS_TYPES.APPROVED:  return 'text-aura-accent border-aura-accent';
+    case STATUS_TYPES.ONGOING:   return 'text-aura-blue border-aura-blue';
+    case STATUS_TYPES.COMPLETED: return 'text-aura-green border-aura-green';
+    case STATUS_TYPES.FULFILLED: return 'text-aura-green border-aura-green';
     case STATUS_TYPES.CANCELLED: return 'text-aura-red border-aura-red';
-    default:                     return 'text-gray-400 border-gray-400';
+    default:                     return 'text-aura-text-faint border-aura-border';
   }
 };
 

@@ -37,7 +37,7 @@ export default function KPIRow({ supplies, requests }) {
         icon={Users}
         trend="📍"
         trendLabel="Deployed across active zones"
-        colorClass="text-[#FF8A8A]"
+        colorClass="text-aura-red"
       />
       <StatCard 
         title="FLEET READY" 

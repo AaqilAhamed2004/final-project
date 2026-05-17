@@ -79,7 +79,7 @@ export default function DonorReliefBoard() {
   };
 
   return (
-    <div className="min-h-screen bg-aura-bg flex flex-col font-sans text-white overflow-x-hidden">
+    <div className="min-h-screen bg-aura-bg flex flex-col font-sans text-aura-text overflow-x-hidden">
       <Navbar 
         title="AURA" 
         user={currentUser ? {
@@ -88,22 +88,22 @@ export default function DonorReliefBoard() {
         } : null}
         onLogout={handleLogout}
       >
-        <span className="text-aura-amber border-b-2 border-aura-amber pb-1 cursor-pointer font-bold whitespace-nowrap">Relief Board</span>
-        <Link to="/contributions" className="hover:text-white cursor-pointer transition-colors whitespace-nowrap">My Contributions</Link>
-        <span className="hover:text-white cursor-pointer transition-colors whitespace-nowrap">Impact Map</span>
+        <span className="text-aura-accent border-b-2 border-aura-accent pb-1 cursor-pointer font-bold whitespace-nowrap">Relief Board</span>
+        <Link to="/contributions" className="hover:text-aura-text-muted cursor-pointer transition-colors whitespace-nowrap text-aura-text-faint">My Contributions</Link>
+        <span className="hover:text-aura-text-muted cursor-pointer transition-colors whitespace-nowrap text-aura-text-faint">Impact Map</span>
       </Navbar>
 
       
       <main className="flex-1 max-w-[1400px] w-full mx-auto p-4 lg:p-8 relative">
         <div className="mb-6 lg:mb-10">
-          <h1 className="text-2xl lg:text-4xl font-bold font-sans text-aura-amber mb-2 tracking-tight">Live Relief Requests Board</h1>
-          <p className="text-white/60 text-sm lg:text-base max-w-3xl leading-relaxed">
+          <h1 className="text-2xl lg:text-4xl font-bold font-sans text-aura-accent mb-2 tracking-tight">Live Relief Requests Board</h1>
+          <p className="text-aura-text-muted text-sm lg:text-base max-w-3xl leading-relaxed">
             Real-time tactical display of civilian and operational needs. Coordinate your impact directly with Ground Network Officers.
           </p>
         </div>
 
         {error && (
-          <div className="bg-aura-red/20 border border-aura-red text-white p-4 rounded mb-6 font-mono text-xs lg:text-sm">
+          <div className="bg-aura-red/10 border border-aura-red text-aura-text p-4 rounded-lg mb-6 font-mono text-xs lg:text-sm">
             SYSTEM ERROR: {error}
           </div>
         )}
@@ -117,7 +117,7 @@ export default function DonorReliefBoard() {
 
         {isLoading && liveRequests.length === 0 ? (
           <div className="flex justify-center items-center h-64">
-            <div className="w-10 h-10 rounded-full border-2 border-aura-amber border-t-transparent animate-spin"></div>
+            <div className="w-10 h-10 rounded-full border-2 border-aura-accent border-t-transparent animate-spin"></div>
           </div>
         ) : (
           <>
@@ -132,7 +132,7 @@ export default function DonorReliefBoard() {
             </div>
 
             {filteredRequests.length === 0 && (
-              <div className="text-center text-white/40 py-20 font-mono text-[10px] lg:text-xs tracking-widest border border-white/5 bg-[#140D07]/50 rounded mt-6 uppercase">
+              <div className="text-center text-aura-text-faint py-20 font-mono text-[10px] lg:text-xs tracking-widest border border-aura-border bg-aura-surface rounded-lg mt-6 uppercase">
                 NO ACTIVE REQUESTS MATCHING FILTERS
               </div>
             )}
@@ -140,8 +140,8 @@ export default function DonorReliefBoard() {
             {displayedCount < filteredRequests.length && (
               <div className="flex justify-center mt-12 mb-8 px-4">
                 <Button 
-                  variant="secondary" 
-                  className="w-full sm:w-auto py-3.5 px-10 text-[10px] tracking-[0.2em] uppercase text-white/60 border-white/10 hover:text-white hover:bg-white/5 font-mono"
+                  variant="ghost" 
+                  className="w-full sm:w-auto py-3.5 px-10 text-[10px] tracking-[0.2em] uppercase font-mono"
                   onClick={() => setDisplayedCount(prev => prev + 4)}
                 >
                   Load More Tactical Feed
@@ -154,16 +154,16 @@ export default function DonorReliefBoard() {
 
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} className="max-w-md w-[90%] mx-auto">
         <div className="p-6 lg:p-8 text-center flex flex-col items-center">
-          <div className="w-16 h-16 rounded-full bg-aura-amber/10 flex items-center justify-center mb-6">
-            <CheckCircle2 size={32} className="text-aura-amber" />
+          <div className="w-16 h-16 rounded-full bg-aura-accent-muted flex items-center justify-center mb-6">
+            <CheckCircle2 size={32} className="text-aura-accent" />
           </div>
-          <h2 className="text-xl lg:text-2xl font-bold mb-2">Confirm Contribution</h2>
-          <p className="text-white/60 mb-6 text-sm">
-            Are you sure you want to book <span className="text-aura-amber font-bold">{selectedRequest?.supply_type || selectedRequest?.item_name || (selectedRequest?.items && selectedRequest?.items[0]?.item_name) || 'this request'}</span>? 
+          <h2 className="text-xl lg:text-2xl font-bold mb-2 text-aura-text">Confirm Contribution</h2>
+          <p className="text-aura-text-muted mb-6 text-sm">
+            Are you sure you want to book <span className="text-aura-accent font-bold">{selectedRequest?.supply_type || selectedRequest?.item_name || (selectedRequest?.items && selectedRequest?.items[0]?.item_name) || 'this request'}</span>? 
             Ground Officer notifications will be dispatched immediately.
           </p>
           <div className="flex flex-col sm:flex-row w-full gap-3 lg:gap-4">
-            <Button variant="secondary" className="flex-1 py-3 order-2 sm:order-1" onClick={() => setIsModalOpen(false)} disabled={isBooking}>Cancel</Button>
+            <Button variant="ghost" className="flex-1 py-3 order-2 sm:order-1" onClick={() => setIsModalOpen(false)} disabled={isBooking}>Cancel</Button>
             <Button className="flex-1 py-3 order-1 sm:order-2" onClick={handleConfirmBooking} disabled={isBooking}>
               {isBooking ? 'Processing...' : 'Confirm'}
             </Button>
@@ -173,12 +173,12 @@ export default function DonorReliefBoard() {
 
       <Modal isOpen={isSuccessOpen} onClose={handleCloseSuccess} className="max-w-md w-[90%] mx-auto">
         <div className="p-6 lg:p-8 text-center flex flex-col items-center">
-          <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mb-6">
-            <CheckCircle2 size={32} className="text-emerald-400 animate-bounce" />
+          <div className="w-16 h-16 rounded-full bg-aura-green/10 flex items-center justify-center mb-6">
+            <CheckCircle2 size={32} className="text-aura-green animate-bounce" />
           </div>
-          <h2 className="text-xl lg:text-2xl font-bold mb-2 text-emerald-400">Booking Confirmed!</h2>
-          <p className="text-white/60 mb-6 text-sm">
-            Thank you for your generous contribution of <span className="text-emerald-400 font-bold">{selectedRequest?.supply_type || selectedRequest?.item_name || (selectedRequest?.items && selectedRequest?.items[0]?.item_name) || 'this request'}</span>. 
+          <h2 className="text-xl lg:text-2xl font-bold mb-2 text-aura-green">Booking Confirmed!</h2>
+          <p className="text-aura-text-muted mb-6 text-sm">
+            Thank you for your generous contribution of <span className="text-aura-green font-bold">{selectedRequest?.supply_type || selectedRequest?.item_name || (selectedRequest?.items && selectedRequest?.items[0]?.item_name) || 'this request'}</span>. 
             The Ground Network Officer has been notified, and the status has been successfully updated to ongoing.
           </p>
           <Button className="w-full py-3" onClick={handleCloseSuccess}>

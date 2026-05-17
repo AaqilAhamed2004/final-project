@@ -1,6 +1,200 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   AURA PLATFORM — GLOBAL DESIGN SYSTEM
+   ═══════════════════════════════════════════════════════════════════════
+
+   ┌─────────────────────────────────────────────────────────────────────┐
+   │  HOW TO CHANGE THE THEME                                           │
+   │                                                                     │
+   │  ALL color definitions live in one place: the :root (dark theme)   │
+   │  and .light (light theme) blocks below.                            │
+   │                                                                     │
+   │  • To change the primary accent (gold/amber):                       │
+   │      Edit  --color-accent  in both :root and .light                │
+   │                                                                     │
+   │  • To change backgrounds, surfaces, borders, text:                  │
+   │      Edit the relevant variable in :root (dark) or .light           │
+   │                                                                     │
+   │  • Tailwind classes like bg-aura-card, text-aura-accent etc. all    │
+   │    automatically pick up those variables — no other files need       │
+   │    touching.                                                         │
+   │                                                                     │
+   │  • The toggle logic lives in:                                        │
+   │      src/context/ThemeContext.jsx                                   │
+   │    which adds/removes the "dark" class from <html>.                 │
+   └─────────────────────────────────────────────────────────────────────┘
+*/
+
 @import "tailwindcss";
 @config "../tailwind.config.js";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Roboto+Mono:wght@400;500;600;700&display=swap');
+
+/* ═══════════════════════════════════════════════════════════════════════
+   DARK THEME (default / :root)
+   ═══════════════════════════════════════════════════════════════════════ */
+:root {
+  /* ── Primary accent ── */
+  --color-accent:        #F59E0B;   /* amber-500  — main brand gold   */
+  --color-accent-hover:  #FBBF24;   /* amber-400  — hover state        */
+  --color-accent-muted:  rgba(245, 158, 11, 0.15); /* glow / subtle bg */
+
+  /* ── Backgrounds ── */
+  --color-bg:            #0D0905;   /* deepest background              */
+  --color-bg-secondary:  #110C07;   /* slightly lighter bg             */
+  --color-surface:       #1C1309;   /* card / panel surfaces           */
+  --color-surface-hover: #231608;   /* hovered surfaces                */
+  --color-card:          #1A1008;   /* elevated card bg                */
+  --color-card-hover:    #231A0C;   /* hovered card                    */
+
+  /* ── Sidebar / Navbar ── */
+  --color-sidebar:       #0D0905;
+  --color-sidebar-hover: rgba(255,255,255,0.04);
+  --color-navbar:        #0D0905;
+
+  /* ── Borders ── */
+  --color-border:        rgba(255, 255, 255, 0.07);
+  --color-border-strong: rgba(255, 255, 255, 0.15);
+
+  /* ── Text ── */
+  --color-text:          #F5F5F0;   /* primary text                    */
+  --color-text-muted:    rgba(245, 240, 235, 0.55);
+  --color-text-faint:    rgba(245, 240, 235, 0.30);
+
+  /* ── Semantic status ── */
+  --color-red:           #EF4444;
+  --color-orange:        #F97316;
+  --color-yellow:        #CA8A04;
+  --color-green:         #22C55E;
+  --color-blue:          #60A5FA;
+
+  /* ── Shadows ── */
+  --shadow-card:         0 4px 24px rgba(0, 0, 0, 0.5);
+  --shadow-nav:          0 2px 16px rgba(0, 0, 0, 0.5);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   LIGHT THEME  (.light class on <html>)
+   ═══════════════════════════════════════════════════════════════════════ */
+html.light {
+  /* ── Primary accent ── */
+  --color-accent:        #B45309;   /* amber-700  — readable on white  */
+  --color-accent-hover:  #92400E;   /* amber-800                       */
+  --color-accent-muted:  rgba(180, 83, 9, 0.12);
+
+  /* ── Backgrounds ── */
+  --color-bg:            #F8F6F3;   /* warm off-white                  */
+  --color-bg-secondary:  #F0EDE8;
+  --color-surface:       #FFFFFF;
+  --color-surface-hover: #F5F2EE;
+  --color-card:          #FFFFFF;
+  --color-card-hover:    #FAF8F5;
+
+  /* ── Sidebar / Navbar ── */
+  --color-sidebar:       #F0EDE8;
+  --color-sidebar-hover: rgba(0, 0, 0, 0.05);
+  --color-navbar:        #FFFFFF;
+
+  /* ── Borders ── */
+  --color-border:        rgba(0, 0, 0, 0.09);
+  --color-border-strong: rgba(0, 0, 0, 0.18);
+
+  /* ── Text ── */
+  --color-text:          #1C1208;
+  --color-text-muted:    rgba(28, 18, 8, 0.55);
+  --color-text-faint:    rgba(28, 18, 8, 0.35);
+
+  /* ── Semantic status ── */
+  --color-red:           #DC2626;
+  --color-orange:        #EA580C;
+  --color-yellow:        #B45309;
+  --color-green:         #16A34A;
+  --color-blue:          #2563EB;
+
+  /* ── Shadows ── */
+  --shadow-card:         0 4px 24px rgba(0, 0, 0, 0.08);
+  --shadow-nav:          0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   BASE STYLES
+   ═══════════════════════════════════════════════════════════════════════ */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
 
 body {
-  @apply bg-aura-bg text-white font-sans antialiased;
+  @apply bg-aura-bg text-aura-text font-sans antialiased;
+  transition: background-color 200ms ease, color 200ms ease;
+  min-height: 100vh;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent-muted);
+}
+
+/* Focus ring */
+*:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Smooth theme transition for all elements */
+*,
+*::before,
+*::after {
+  transition: background-color 200ms ease, border-color 200ms ease;
+}
+
+/* Override transition for elements that shouldn't animate */
+.no-theme-transition,
+.no-theme-transition * {
+  transition: none !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   UTILITY CLASSES
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Glass morphism card effect */
+.aura-glass {
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: var(--shadow-card);
+}
+
+/* Accent glow pulse */
+.aura-pulse-accent {
+  animation: aura-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes aura-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Timeline line for Intel Stream */
+.aura-timeline-line {
+  position: absolute;
+  left: 1.75rem;
+  top: 1.5rem;
+  bottom: 1.5rem;
+  width: 1px;
+  background: var(--color-border);
 }

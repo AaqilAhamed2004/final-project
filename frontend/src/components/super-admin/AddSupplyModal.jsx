@@ -74,7 +74,7 @@ export default function AddSupplyModal({ isOpen, onClose, onAdd }) {
         />
 
         <div className="flex gap-4 mt-8">
-          <Button variant="secondary" className="flex-1 py-3 text-xs border-white/20 text-white/70" onClick={onClose}>Cancel</Button>
+          <Button variant="secondary" className="flex-1 py-3 text-xs border-aura-border text-aura-text-muted" onClick={onClose}>Cancel</Button>
           <Button className="flex-1 py-3 text-xs" onClick={handleSubmit}>Add Supply</Button>
         </div>
       </div>

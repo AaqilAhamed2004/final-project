@@ -6,10 +6,10 @@ export default function PriorityResultScreen() {
   const navigate = useNavigate();
   
   return (
-    <div className="min-h-screen bg-[#0D0905] p-8 text-white flex flex-col font-sans">
+    <div className="min-h-screen bg-aura-bg p-8 text-aura-text flex flex-col font-sans">
       <button 
         onClick={() => navigate(-1)} 
-        className="text-aura-amber text-xs font-mono tracking-widest uppercase hover:underline self-start mb-8"
+        className="text-aura-accent text-xs font-mono tracking-widest uppercase hover:text-aura-accent-hover hover:underline self-start mb-8 transition-colors"
       >
         &lt; Return to Operations
       </button>

@@ -26,6 +26,7 @@ export default function DonorReliefBoard() {
   const [displayedCount, setDisplayedCount] = useState(8);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSuccessOpen, setIsSuccessOpen] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
 
   const fetchBoardData = async () => {
@@ -58,12 +59,18 @@ export default function DonorReliefBoard() {
       await bookRequest(selectedRequest._id || selectedRequest.id, `Booked by donor ${currentUser?.full_name || currentUser?.name || 'Anonymous'}`);
       await fetchBoardData(); // refresh the board
       setIsModalOpen(false);
-      setSelectedRequest(null);
+      setIsSuccessOpen(true);
     } catch (err) {
       alert(err.message || 'Failed to confirm booking.');
+      setSelectedRequest(null);
     } finally {
       setIsBooking(false);
     }
+  };
+
+  const handleCloseSuccess = () => {
+    setIsSuccessOpen(false);
+    setSelectedRequest(null);
   };
 
   const handleLogout = () => {
@@ -152,7 +159,7 @@ export default function DonorReliefBoard() {
           </div>
           <h2 className="text-xl lg:text-2xl font-bold mb-2">Confirm Contribution</h2>
           <p className="text-white/60 mb-6 text-sm">
-            Are you sure you want to book <span className="text-aura-amber font-bold">{selectedRequest?.supply_type || selectedRequest?.item_name}</span>? 
+            Are you sure you want to book <span className="text-aura-amber font-bold">{selectedRequest?.supply_type || selectedRequest?.item_name || (selectedRequest?.items && selectedRequest?.items[0]?.item_name) || 'this request'}</span>? 
             Ground Officer notifications will be dispatched immediately.
           </p>
           <div className="flex flex-col sm:flex-row w-full gap-3 lg:gap-4">
@@ -161,6 +168,22 @@ export default function DonorReliefBoard() {
               {isBooking ? 'Processing...' : 'Confirm'}
             </Button>
           </div>
+        </div>
+      </Modal>
+
+      <Modal isOpen={isSuccessOpen} onClose={handleCloseSuccess} className="max-w-md w-[90%] mx-auto">
+        <div className="p-6 lg:p-8 text-center flex flex-col items-center">
+          <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center mb-6">
+            <CheckCircle2 size={32} className="text-emerald-400 animate-bounce" />
+          </div>
+          <h2 className="text-xl lg:text-2xl font-bold mb-2 text-emerald-400">Booking Confirmed!</h2>
+          <p className="text-white/60 mb-6 text-sm">
+            Thank you for your generous contribution of <span className="text-emerald-400 font-bold">{selectedRequest?.supply_type || selectedRequest?.item_name || (selectedRequest?.items && selectedRequest?.items[0]?.item_name) || 'this request'}</span>. 
+            The Ground Network Officer has been notified, and the status has been successfully updated to ongoing.
+          </p>
+          <Button className="w-full py-3" onClick={handleCloseSuccess}>
+            Close
+          </Button>
         </div>
       </Modal>
     </div>

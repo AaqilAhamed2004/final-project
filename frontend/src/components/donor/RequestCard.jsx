@@ -9,7 +9,7 @@ import { formatRequestId } from '../../utils/priorityHelpers';
 export default function RequestCard({ request, onBook }) {
   // Use _id for displaying, fallback to id for old mock data just in case
   const reqId = request._id || request.id;
-  const itemName = request.supply_type || request.itemName;
+  const itemName = request.supply_type || request.itemName || (request.items && request.items[0]?.item_name) || 'Relief Request';
   // priority_level is written directly on the request document by the AI engine
   const priority = request.priority_level || null;
 
@@ -42,9 +42,27 @@ export default function RequestCard({ request, onBook }) {
           </div>
         </div>
 
-        <Button className="w-full py-3" onClick={() => onBook(request)}>
-          Book This Request
-        </Button>
+        {request.status === 'ongoing' ? (
+          <Button 
+            variant="secondary" 
+            className="w-full py-3 opacity-80 border-emerald-500/50 text-emerald-400 cursor-not-allowed hover:bg-transparent"
+            disabled
+          >
+            Ongoing Contribution
+          </Button>
+        ) : request.status === 'completed' ? (
+          <Button 
+            variant="secondary" 
+            className="w-full py-3 opacity-40 border-white/10 text-white/50 cursor-not-allowed hover:bg-transparent"
+            disabled
+          >
+            Completed
+          </Button>
+        ) : (
+          <Button className="w-full py-3" onClick={() => onBook(request)}>
+            Book This Request
+          </Button>
+        )}
       </div>
     </Card>
   );

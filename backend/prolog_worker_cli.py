@@ -38,8 +38,8 @@ RISK_PL_SWIPL     = RISK_PL.replace("\\", "/")
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def _map_priority_label(color: str) -> str:
-    return {"red": "Critical", "orange": "Urgent", "yellow": "Standard"}.get(
-        color.lower().strip("."), "Standard"
+    return {"red": "CRITICAL", "orange": "MODERATE", "yellow": "LOW"}.get(
+        color.lower().strip("."), "LOW"
     )
 
 def _priority_to_score(priority: str) -> int:

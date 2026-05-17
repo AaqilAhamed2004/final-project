@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { ROLES } from './constants'
 import { AuthProvider } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { useAuth } from './hooks/useAuth'
@@ -18,7 +19,9 @@ import ProfilePage from './pages/ProfilePage'
 
 function ProtectedRoute({ children, allowedRoles }) {
   const { user, token } = useAuth()
-  if (!token) return <Navigate to="/login" replace />
+  const location = useLocation()
+
+  if (!token) return <Navigate to="/login" state={{ from: location.pathname }} replace />
   if (allowedRoles && !allowedRoles.includes(user?.role))
     return <Navigate to="/" replace />
 
@@ -30,9 +33,9 @@ function RootRedirect() {
   
   if (!token) return <Navigate to="/login" replace />
   
-  if (user?.role === 'super_admin') return <Navigate to="/dashboard/admin" replace />
-  if (user?.role === 'gn_officer')  return <Navigate to="/dashboard/gn" replace />
-  if (user?.role === 'donor')       return <Navigate to="/dashboard/donor" replace />
+  if (user?.role === ROLES.SUPER_ADMIN) return <Navigate to="/dashboard/admin" replace />
+  if (user?.role === ROLES.GN_OFFICER)  return <Navigate to="/dashboard/gn" replace />
+  if (user?.role === ROLES.DONOR)       return <Navigate to="/dashboard/donor" replace />
   
   return <Navigate to="/public" replace />
 }

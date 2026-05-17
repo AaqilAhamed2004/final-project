@@ -226,6 +226,13 @@ export default function AdminInventoryPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-aura-border">
+                      {filteredSupplies.length === 0 && (
+                        <tr>
+                          <td colSpan="10" className="py-10 text-center text-[10px] font-mono text-aura-text-faint tracking-widest uppercase">
+                            No supplies found matching current filters
+                          </td>
+                        </tr>
+                      )}
                       {filteredSupplies.map((item) => (
                         <tr key={item._id} className="hover:bg-aura-surface-hover transition-colors group">
                           <td className="py-5 px-6">

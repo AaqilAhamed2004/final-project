@@ -56,7 +56,7 @@ class ReliefRequestResponse(BaseModel):
     population_size: str = "medium"
     is_public: bool = True
     created_at: Optional[datetime] = None
-    priority_level: str = "Standard"
+    priority_level: str = "LOW"
     request_type: str = "Aura-Led"
     urgency_level: str = "Normal"
     etd: str = "Pending"

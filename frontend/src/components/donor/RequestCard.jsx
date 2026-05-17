@@ -25,11 +25,11 @@ export default function RequestCard({ request, onBook }) {
           <span className="text-aura-text-muted text-[11px] font-mono font-bold tracking-widest" title={reqId}>REQ {formatRequestId(reqId?.slice(-6) || 'N/A')}</span>
         </div>
         
-        <h3 className="text-[22px] font-bold font-sans mb-2 tracking-tight text-aura-text leading-tight">{itemName}</h3>
+        <h3 className="text-[22px] font-bold font-sans mb-2 tracking-tight text-aura-text leading-tight line-clamp-2" title={itemName}>{itemName}</h3>
         
-        <div className="flex items-center gap-2 text-aura-text-muted text-sm font-sans mb-8">
-          <MapPin size={16} />
-          {location}
+        <div className="flex items-center gap-2 text-aura-text-muted text-sm font-sans mb-8 w-full">
+          <MapPin size={16} className="shrink-0" />
+          <span className="truncate" title={location}>{location}</span>
         </div>
       </div>
 

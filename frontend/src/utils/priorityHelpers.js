@@ -6,10 +6,11 @@ import { PRIORITY_LEVELS, STATUS_TYPES } from '../constants';
  * Accepts: "Critical", "Urgent", "Standard" (from MongoDB/AI engine)
  */
 export const getPriorityColor = (priority) => {
-  switch (priority) {
+  const p = (priority || '').toUpperCase();
+  switch (p) {
     case PRIORITY_LEVELS.CRITICAL: return 'text-aura-red bg-aura-red/10 border border-aura-red/30';
-    case PRIORITY_LEVELS.URGENT:   return 'text-aura-orange bg-aura-orange/10 border border-aura-orange/30';
-    case PRIORITY_LEVELS.STANDARD: return 'text-aura-yellow bg-aura-yellow/10 border border-aura-yellow/30';
+    case PRIORITY_LEVELS.MODERATE: return 'text-aura-orange bg-aura-orange/10 border border-aura-orange/30';
+    case PRIORITY_LEVELS.LOW: return 'text-aura-yellow bg-aura-yellow/10 border border-aura-yellow/30';
     default:                       return 'text-aura-text-muted bg-aura-surface border border-aura-border';
   }
 };
@@ -18,10 +19,11 @@ export const getPriorityColor = (priority) => {
  * Maps a priority_level string to a human-readable display label.
  */
 export const getPriorityLabel = (priority) => {
-  switch (priority) {
+  const p = (priority || '').toUpperCase();
+  switch (p) {
     case PRIORITY_LEVELS.CRITICAL: return 'CRITICAL PRIORITY';
-    case PRIORITY_LEVELS.URGENT:   return 'URGENT PRIORITY';
-    case PRIORITY_LEVELS.STANDARD: return 'STANDARD PRIORITY';
+    case PRIORITY_LEVELS.MODERATE: return 'MODERATE PRIORITY';
+    case PRIORITY_LEVELS.LOW: return 'LOW PRIORITY';
     default:                       return 'UNKNOWN PRIORITY';
   }
 };
@@ -40,7 +42,8 @@ export const getStatusColor = (status) => {
 
 
 export const formatRequestId = (id) => {
-  return id.startsWith('#') ? id : `#${id}`;
+  if (!id) return '#N/A';
+  return String(id).startsWith('#') ? String(id) : `#${id}`;
 };
 
 export const formatTimestamp = (isoString) => {

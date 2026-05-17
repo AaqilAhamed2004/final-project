@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { loginUser, registerUser } from '../api';
 import { ROLES } from '../constants';
@@ -22,6 +22,7 @@ export default function LoginPage() {
   
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogin = async (e) => {
     if (e) e.preventDefault();
@@ -32,9 +33,14 @@ export default function LoginPage() {
       const data = await loginUser(email, password);
       login(data.access_token, data.user);
 
-      if (data.user.role === ROLES.GN_OFFICER) navigate('/dashboard/gn');
-      else if (data.user.role === ROLES.DONOR) navigate('/dashboard/donor');
-      else if (data.user.role === ROLES.SUPER_ADMIN) navigate('/dashboard/admin');
+      const destination = location.state?.from;
+      if (destination) {
+        navigate(destination, { replace: true });
+      } else {
+        if (data.user.role === ROLES.GN_OFFICER) navigate('/dashboard/gn');
+        else if (data.user.role === ROLES.DONOR) navigate('/dashboard/donor');
+        else if (data.user.role === ROLES.SUPER_ADMIN) navigate('/dashboard/admin');
+      }
     } catch (err) {
       setError(err.message || 'Invalid identity or cipher. Please verify credentials.');
     } finally {

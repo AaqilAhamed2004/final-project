@@ -39,14 +39,39 @@ export function AuthProvider({ children }) {
       })
   }, [])
 
-  // Listen for aura_logout events dispatched by the API layer on 401
+  // Listen for aura_logout events dispatched by the API layer on 401, and cross-tab storage changes
   useEffect(() => {
     const handleForceLogout = () => {
       setToken(null)
       setUser(null)
     }
+    
+    const handleStorageChange = (e) => {
+      if (e.key === 'aura_token') {
+        if (!e.newValue) {
+          setToken(null)
+          setUser(null)
+        } else {
+          setToken(e.newValue)
+          const storedUser = localStorage.getItem('aura_user')
+          if (storedUser) {
+            try {
+              setUser(JSON.parse(storedUser))
+            } catch (err) {
+              setUser(null)
+            }
+          }
+        }
+      }
+    }
+
     window.addEventListener('aura_logout', handleForceLogout)
-    return () => window.removeEventListener('aura_logout', handleForceLogout)
+    window.addEventListener('storage', handleStorageChange)
+    
+    return () => {
+      window.removeEventListener('aura_logout', handleForceLogout)
+      window.removeEventListener('storage', handleStorageChange)
+    }
   }, [])
 
   const login = (tokenValue, userData) => {

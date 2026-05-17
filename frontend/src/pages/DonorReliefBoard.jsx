@@ -103,8 +103,11 @@ export default function DonorReliefBoard() {
         </div>
 
         {error && (
-          <div className="bg-aura-red/10 border border-aura-red text-aura-text p-4 rounded-lg mb-6 font-mono text-xs lg:text-sm">
-            SYSTEM ERROR: {error}
+          <div className="bg-aura-red/10 border border-aura-red text-aura-text p-4 rounded-lg mb-6 font-mono text-xs lg:text-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>SYSTEM ERROR: {error}</div>
+            <Button variant="ghost" className="border-aura-red/50 hover:bg-aura-red/20 text-aura-red text-[10px] py-2" onClick={fetchBoardData}>
+              RETRY CONNECTION
+            </Button>
           </div>
         )}
 

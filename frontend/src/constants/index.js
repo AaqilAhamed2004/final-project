@@ -6,9 +6,9 @@ export const ROLES = {
 
 // These MUST match the strings written to MongoDB by prolog_worker_cli.py
 export const PRIORITY_LEVELS = {
-  CRITICAL: 'Critical',
-  URGENT:   'Urgent',
-  STANDARD: 'Standard',
+  CRITICAL: 'CRITICAL',
+  MODERATE: 'MODERATE',
+  LOW: 'LOW',
 };
 
 export const SUPPLY_CATEGORIES = {

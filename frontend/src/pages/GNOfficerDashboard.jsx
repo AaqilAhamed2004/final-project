@@ -61,8 +61,10 @@ export default function GNOfficerDashboard() {
       setSubmittedRequest(newRequest);
       setIsResultModalOpen(true);
       fetchMyRequests();
+      return true;
     } catch (err) {
       alert(err.message || 'Error initializing deployment.');
+      return false;
     } finally {
       setIsSubmitting(false);
     }

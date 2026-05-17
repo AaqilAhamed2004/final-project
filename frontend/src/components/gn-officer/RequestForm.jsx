@@ -45,7 +45,7 @@ export default function RequestForm({ onSubmit, isSubmitting }) {
   };
 
   // ── Submit ────────────────────────────────────────────────────────────────
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setFormError('');
 
     if (!location.trim()) {
@@ -86,7 +86,16 @@ export default function RequestForm({ onSubmit, isSubmitting }) {
       }),
     };
 
-    onSubmit(payload);
+    const success = await onSubmit(payload);
+    if (success) {
+      setLocation('');
+      setDescription('');
+      setRoadStatus('clear');
+      setPopSize('medium');
+      setIsPublic(true);
+      setItems([emptyItem()]);
+      setFormError('');
+    }
   };
 
   // ── UI ────────────────────────────────────────────────────────────────────

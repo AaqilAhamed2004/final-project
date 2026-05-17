@@ -17,7 +17,7 @@ export default function ActiveLog({ requests, onViewDetails, onStatusUpdate }) {
     { 
       header: 'LOCATION', 
       cell: (row) => (
-        <span className="font-sans text-sm text-white/90 truncate max-w-[150px] block" title={row.location}>{row.location}</span>
+        <span className="font-sans text-sm text-aura-text truncate max-w-[150px] block" title={row.location}>{row.location}</span>
       )
     },
     { 
@@ -34,7 +34,7 @@ export default function ActiveLog({ requests, onViewDetails, onStatusUpdate }) {
         <div className="flex items-center gap-3">
           <button 
             onClick={() => onViewDetails(row)}
-            className="text-white/30 hover:text-white transition-colors p-1" 
+            className="text-aura-text-faint hover:text-aura-text transition-colors p-1" 
             title="View Tactical Analysis"
           >
             <Eye size={16} />
@@ -61,7 +61,7 @@ export default function ActiveLog({ requests, onViewDetails, onStatusUpdate }) {
           )}
 
           {row.status === 'approved' && (
-            <div className="text-white/10" title="Awaiting Logistics">
+            <div className="text-aura-text-faint" title="Awaiting Logistics">
               <Clock size={16} />
             </div>
           )}
@@ -71,11 +71,11 @@ export default function ActiveLog({ requests, onViewDetails, onStatusUpdate }) {
   ];
 
   return (
-    <Card className="flex flex-col p-0 overflow-hidden bg-[#140D07] border-white/5 shadow-2xl">
-      <div className="flex justify-between items-center p-6 border-b border-white/5">
+    <Card className="flex flex-col p-0 overflow-hidden shadow-aura-card">
+      <div className="flex justify-between items-center p-6 border-b border-aura-border bg-aura-surface">
         <div>
           <h2 className="text-xl font-bold font-sans tracking-tight">Active Tactical Log</h2>
-          <p className="text-[10px] font-mono text-white/30 uppercase tracking-[0.2em] mt-1">Real-time request processing feed</p>
+          <p className="text-[10px] font-mono text-aura-text-faint uppercase tracking-[0.2em] mt-1">Real-time request processing feed</p>
         </div>
         <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-aura-amber animate-pulse"></div>
@@ -88,7 +88,7 @@ export default function ActiveLog({ requests, onViewDetails, onStatusUpdate }) {
           <Table columns={columns} data={requests} className="min-w-[600px]" />
         </div>
       ) : (
-        <div className="p-12 text-center text-white/20 text-sm font-mono uppercase tracking-[0.3em]">No active deployments in this sector.</div>
+        <div className="p-12 text-center text-aura-text-faint text-sm font-mono uppercase tracking-[0.3em]">No active deployments in this sector.</div>
       )}
     </Card>
   );

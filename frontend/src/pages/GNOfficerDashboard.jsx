@@ -104,7 +104,7 @@ export default function GNOfficerDashboard() {
   const criticalCount = requests.filter(r => r.priority_level === 'Critical').length;
 
   return (
-    <div className="min-h-screen bg-aura-bg flex font-sans text-white overflow-hidden">
+    <div className="min-h-screen bg-aura-bg flex font-sans text-aura-text overflow-hidden">
       <Sidebar 
         navItems={navItems} 
         activeSessionText={currentUser ? `${currentUser.role?.replace('_', ' ')}: ${currentUser.full_name || currentUser.name || 'Operator'}` : 'GN Officer'}
@@ -132,7 +132,7 @@ export default function GNOfficerDashboard() {
             {/* Right Column - Status Feed */}
             <div className="col-span-12 lg:col-span-7 xl:col-span-8 flex flex-col gap-6 order-1 lg:order-2">
               {error && (
-                <div className="bg-aura-red/20 border border-aura-red text-white p-3 rounded font-mono text-xs">
+                <div className="bg-aura-red/20 border border-aura-red text-aura-text p-3 rounded-lg font-mono text-xs">
                   {error}
                 </div>
               )}
@@ -149,8 +149,8 @@ export default function GNOfficerDashboard() {
                 <StatCard 
                   title="ACTIVE DEPLOYMENTS" 
                   value={isLoading ? '-' : transitCount.toString()} 
-                  colorClass="text-blue-400"
-                  valueColorClass="text-blue-400"
+                  colorClass="text-aura-blue"
+                  valueColorClass="text-aura-blue"
                   trend="Logistics tracking..."
                 />
                 <StatCard 

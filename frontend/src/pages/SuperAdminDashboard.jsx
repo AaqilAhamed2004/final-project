@@ -94,7 +94,7 @@ export default function SuperAdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-aura-bg flex font-sans text-white">
+    <div className="min-h-screen bg-aura-bg flex font-sans text-aura-text">
       <Sidebar 
         navItems={navItems} 
         activeSessionText={currentUser ? `Admin: ${currentUser.full_name || currentUser.name || 'Prime'}` : 'Admin'}
@@ -108,7 +108,7 @@ export default function SuperAdminDashboard() {
           title="Super Admin Dashboard" 
           user={currentUser} 
           badgeText="CRITICAL OPS ACTIVE"
-          badgeColorClass="border-white/20 text-white/70"
+          badgeColorClass="border-aura-border text-aura-text-muted"
           onMenuClick={() => setIsSidebarOpen(true)}
         />
         
@@ -116,7 +116,7 @@ export default function SuperAdminDashboard() {
           <div className="max-w-[1600px] mx-auto space-y-6 lg:space-y-8">
             
             {error && (
-              <div className="bg-aura-red/20 border border-aura-red text-white p-4 rounded mb-6 font-mono text-sm">
+              <div className="bg-aura-red/20 border border-aura-red text-aura-text p-4 rounded-lg mb-6 font-mono text-sm">
                 SYSTEM ERROR: {error}
               </div>
             )}
@@ -127,16 +127,16 @@ export default function SuperAdminDashboard() {
               {/* Main Column */}
               <div className="col-span-12 xl:col-span-8 flex flex-col gap-6">
                 {/* Inventory Panel */}
-                <div className="flex flex-col border border-white/5 rounded-lg p-4 lg:p-6 bg-[#140D07] relative min-h-[400px]">
+                <div className="flex flex-col border border-aura-border rounded-lg p-4 lg:p-6 bg-aura-card relative min-h-[400px]">
                   {isLoading && supplies.length === 0 && (
-                    <div className="absolute inset-0 bg-[#140D07]/80 flex justify-center items-center z-10 rounded-lg">
-                      <div className="w-8 h-8 rounded-full border-2 border-aura-amber border-t-transparent animate-spin"></div>
+                    <div className="absolute inset-0 bg-aura-card/90 flex justify-center items-center z-10 rounded-lg">
+                      <div className="w-8 h-8 rounded-full border-2 border-aura-border border-t-aura-accent animate-spin" />
                     </div>
                   )}
                   <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
                     <div>
-                      <h2 className="text-xl lg:text-2xl font-bold font-sans mb-1 tracking-tight">Supply Inventory</h2>
-                      <p className="text-white/50 text-xs lg:text-sm font-sans">Real-time status of disaster relief stock</p>
+                      <h2 className="text-xl lg:text-2xl font-bold font-sans mb-1 tracking-tight text-aura-text">Supply Inventory</h2>
+                      <p className="text-aura-text-muted text-xs lg:text-sm font-sans">Real-time status of disaster relief stock</p>
                     </div>
                     <Button onClick={() => setIsAddModalOpen(true)} className="w-full sm:w-auto py-2.5 px-6 text-xs uppercase tracking-widest">
                       <Plus size={16} />
@@ -168,8 +168,8 @@ export default function SuperAdminDashboard() {
                 <GlobalLogistics requests={requests} />
               </div>
               <div className="col-span-12 xl:col-span-4 flex justify-end items-end pb-2">
-                 <Button variant="secondary" className="w-full py-5 text-[10px] tracking-[0.3em] text-white/70 border-white/10 hover:border-white/30 bg-[#140D07] hover:bg-[#1A140F] hover:text-white transition-all uppercase font-mono shadow-lg">
-                   View Historical Analytics
+                <Button variant="ghost" className="w-full py-5 text-[10px] tracking-[0.3em] uppercase font-mono shadow-lg">
+                  View Historical Analytics
                  </Button>
               </div>
             </div>

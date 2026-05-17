@@ -16,6 +16,9 @@ export default function AdminInventoryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const role = currentUser?.role;
@@ -105,10 +108,17 @@ export default function AdminInventoryPage() {
     ? `GN Officer: ${currentUser?.full_name || 'Operator'}`
     : `Admin: ${currentUser?.full_name || 'Prime'}`;
 
-  const filteredSupplies = supplies.filter(s => 
-    s.item_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredSupplies = supplies.filter(s => {
+    const matchesSearch = s.item_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          s.category.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = !selectedCategory || s.category.toLowerCase() === selectedCategory.toLowerCase();
+    
+    const itemDate = s.expiration_date || '2026-12-31';
+    const matchesStart = !startDate || itemDate >= startDate;
+    const matchesEnd = !endDate || itemDate <= endDate;
+    
+    return matchesSearch && matchesCategory && matchesStart && matchesEnd;
+  });
 
   return (
     <div className="min-h-screen bg-aura-bg flex font-sans text-white">
@@ -156,17 +166,50 @@ export default function AdminInventoryPage() {
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
                 </div>
-                <div className="flex items-center gap-2 bg-[#1A140F] border border-white/10 rounded px-3 py-2.5 cursor-pointer hover:bg-white/[0.03] transition-colors">
-                  <Filter size={16} className="text-white/30" />
-                  <span className="text-[10px] font-mono text-white/60 uppercase tracking-widest">Category Filter</span>
+                <div className="relative">
+                  <Filter size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" />
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="w-full bg-[#1A140F] border border-white/10 rounded pl-10 pr-8 py-2.5 text-xs font-mono text-white/60 uppercase tracking-widest focus:border-aura-amber/40 outline-none transition-colors appearance-none cursor-pointer"
+                  >
+                    <option value="" className="bg-[#1A140F]">All Categories</option>
+                    <option value="medicine" className="bg-[#1A140F]">Medicine</option>
+                    <option value="food" className="bg-[#1A140F]">Food</option>
+                    <option value="shelter" className="bg-[#1A140F]">Shelter</option>
+                    <option value="other" className="bg-[#1A140F]">Other</option>
+                  </select>
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white/30 text-[10px]">▼</div>
                 </div>
-                <div className="flex items-center gap-2 bg-[#1A140F] border border-white/10 rounded px-3 py-2.5 cursor-pointer hover:bg-white/[0.03] transition-colors">
-                  <Calendar size={16} className="text-white/30" />
-                  <span className="text-[10px] font-mono text-white/60 uppercase tracking-widest">Date Range</span>
-                </div>
-                <div className="flex items-center gap-2 bg-[#1A140F] border border-white/10 rounded px-3 py-2.5 cursor-pointer hover:bg-white/[0.03] transition-colors">
-                  <MapPin size={16} className="text-white/30" />
-                  <span className="text-[10px] font-mono text-white/60 uppercase tracking-widest">Hub Location</span>
+                <div className="col-span-1 md:col-span-2 flex flex-wrap items-center gap-2 bg-[#1A140F] border border-white/10 rounded px-3 py-1 bg-white/[0.01]">
+                  <div className="flex items-center gap-1.5">
+                    <Calendar size={16} className="text-white/30" />
+                    <span className="text-[10px] font-mono text-white/60 uppercase tracking-widest">Expires:</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 flex-1 min-w-[150px]">
+                    <span className="text-[9px] font-mono text-white/40 uppercase">From</span>
+                    <input 
+                      type="date" 
+                      className="bg-[#140D07] border border-white/5 rounded px-2 py-1 text-xs font-mono text-white/80 focus:border-aura-amber/30 focus:outline-none cursor-pointer"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                    />
+                    <span className="text-[9px] font-mono text-white/40 uppercase">To</span>
+                    <input 
+                      type="date" 
+                      className="bg-[#140D07] border border-white/5 rounded px-2 py-1 text-xs font-mono text-white/80 focus:border-aura-amber/30 focus:outline-none cursor-pointer"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                    />
+                    {(startDate || endDate) && (
+                      <button 
+                        onClick={() => { setStartDate(''); setEndDate(''); }} 
+                        className="text-[9px] font-mono text-aura-red hover:underline uppercase ml-auto"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 

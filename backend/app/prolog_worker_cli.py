@@ -54,6 +54,7 @@ def run_analysis(request_id: str):
 
         items = request.get("items", [])
         road  = request.get("road_status", "clear")
+        prolog_road = "partial" if road == "flooded" else road
         pop   = request.get("population_size", "medium")
         category = _dominant_category(items)
 
@@ -61,7 +62,7 @@ def run_analysis(request_id: str):
         min_stock = min(cat_stocks) if cat_stocks else 0
         stock_level = _stock_level(min_stock)
 
-        print(f"INFO: Data - Cat:{category}, Road:{road}, Pop:{pop}, Stock:{stock_level}")
+        print(f"INFO: Data - Cat:{category}, Road:{road} (prolog_road={prolog_road}), Pop:{pop}, Stock:{stock_level}")
 
         # 2. Run Prolog
         priority_color = "yellow"
@@ -73,7 +74,7 @@ def run_analysis(request_id: str):
         prolog.consult(MEDICINE_PL)
         prolog.consult(RISK_PL)
 
-        p_query = f"assign_priority({category}, {road}, {pop}, {stock_level}, P)"
+        p_query = f"assign_priority({category}, {prolog_road}, {pop}, {stock_level}, P)"
         print(f"QUERY: {p_query}")
         results = list(prolog.query(p_query))
         if results:
@@ -82,7 +83,7 @@ def run_analysis(request_id: str):
         else:
             print("WARNING: No priority results from Prolog.")
 
-        f_query = f"get_all_flags({road}, {pop}, {category}, {stock_level}, Flags)"
+        f_query = f"get_all_flags({prolog_road}, {pop}, {category}, {stock_level}, Flags)"
         f_results = list(prolog.query(f_query))
         if f_results and "Flags" in f_results[0]:
             risk_flags = [str(f) for f in f_results[0]["Flags"]]

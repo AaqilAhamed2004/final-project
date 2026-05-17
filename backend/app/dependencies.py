@@ -40,13 +40,22 @@ def require_role(*roles: str):
     """
     allowed_roles = []
     for r in roles:
-        if isinstance(r, list):
-            allowed_roles.extend(r)
+        if isinstance(r, (list, tuple, set)):
+            for inner in r:
+                allowed_roles.append(str(inner).strip().lower())
         else:
-            allowed_roles.append(r)
+            allowed_roles.append(str(r).strip().lower())
 
     def checker(current_user: dict = Depends(get_current_user)):
-        if current_user.get("role") not in allowed_roles:
+        user_role = str(current_user.get("role", "")).strip().lower()
+        if user_role not in allowed_roles:
+            # Production-ready audit log for role authorization mismatch
+            print(
+                f"\033[91m[SECURITY ALERT] Access Denied: User '{current_user.get('email')}' "
+                f"(role: '{user_role}') attempted to access a route requiring one of "
+                f"these roles: {allowed_roles}\033[0m",
+                flush=True
+            )
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"This action requires one of these roles: {', '.join(allowed_roles)}"

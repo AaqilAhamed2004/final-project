@@ -109,6 +109,10 @@ def run_analysis(request_id: str):
 
         items    = request.get("items", [])
         road     = request.get("road_status", "clear")
+        
+        # Normalize "flooded" database status to "partial" for backwards-compatible Prolog rulesets
+        prolog_road = "partial" if road == "flooded" else road
+        
         pop      = request.get("population_size", "medium")
         category = _dominant_category(items)
 
@@ -119,12 +123,12 @@ def run_analysis(request_id: str):
         ]
         stock_level = _stock_level(min(cat_stocks) if cat_stocks else 0)
 
-        print(f"DEBUG: category={category}, road={road}, pop={pop}, stock={stock_level}")
+        print(f"DEBUG: category={category}, road={road} (prolog_road={prolog_road}), pop={pop}, stock={stock_level}")
 
         # 2. Query Prolog via stable shell invocation
         priority_color = "yellow"
 
-        p_goal = f"assign_priority({category}, {road}, {pop}, {stock_level}, P), writeln(P)"
+        p_goal = f"assign_priority({category}, {prolog_road}, {pop}, {stock_level}, P), writeln(P)"
         output = run_swipl_query(p_goal)
         if output:
             priority_color = output.lower().strip(".")
@@ -132,7 +136,7 @@ def run_analysis(request_id: str):
         else:
             print("WARNING: No output from Prolog priority query. Defaulting to 'yellow'.")
 
-        f_goal = f"get_all_flags({road}, {pop}, {category}, {stock_level}, Flags), writeln(Flags)"
+        f_goal = f"get_all_flags({prolog_road}, {pop}, {category}, {stock_level}, Flags), writeln(Flags)"
         flags_raw = run_swipl_query(f_goal)
         risk_flags = [f.strip() for f in flags_raw.strip("[]").split(",") if f.strip()] if flags_raw else []
 

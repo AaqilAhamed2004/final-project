@@ -22,6 +22,19 @@ async def create_request(data: ReliefRequestCreate, background_tasks: Background
         req_dict["created_at"] = datetime.utcnow()
         req_dict["priority_level"] = "Standard"  # Default before AI analysis (matches frontend PRIORITY_LEVELS.STANDARD)
 
+        # Double-defense fallback processing for request items
+        for item in req_dict.get("items", []):
+            # 1. Fallback stock mapping (quantity is entered in frontend "Available" field)
+            if not item.get("current_stock") and item.get("quantity"):
+                item["current_stock"] = item.get("quantity", 0)
+            
+            # 2. Dynamic Prolog key generation from item name
+            if not item.get("prolog_item_key"):
+                cleaned = "".join([c if c.isalnum() else "_" for c in item.get("item_name", "")]).lower()
+                while "__" in cleaned:
+                    cleaned = cleaned.replace("__", "_")
+                cleaned = cleaned.strip("_")
+                item["prolog_item_key"] = cleaned if cleaned else None
         
         result = requests_col.insert_one(req_dict)
         

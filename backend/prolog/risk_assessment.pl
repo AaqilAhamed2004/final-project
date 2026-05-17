@@ -11,6 +11,12 @@
 %% ============================================================
 
 
+%% ─── ROAD ACCESSIBILITY HELPERS ─────────────────────────────
+:- multifile degraded_road/1.
+degraded_road(partial).
+degraded_road(flooded).
+
+
 %% ─── Risk Flag Rules ────────────────────────────────────────
 %% NOTE: Do NOT use ! (cut) here.
 %% We WANT all matching rules to fire so we get all risk flags.
@@ -24,8 +30,8 @@ is_risk_flag(_, large, medicine, _,
 is_risk_flag(_, _, _, empty,
     "ZERO STOCK: Raise immediate resupply order — do not wait.").
 
-is_risk_flag(partial, large, _, _,
-    "PARTIAL ACCESS + LARGE CROWD: Deploy motorbike couriers for last mile.").
+is_risk_flag(Road, large, _, _,
+    "PARTIAL/FLOODED ACCESS + LARGE CROWD: Deploy motorbike couriers for last mile.") :- degraded_road(Road).
 
 is_risk_flag(_, large, food, empty,
     "FOOD SHORTAGE (LARGE): Risk of civil unrest — prioritise security escort.").

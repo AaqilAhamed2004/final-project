@@ -19,6 +19,12 @@
 %% ============================================================
 
 
+%% ─── ROAD ACCESSIBILITY HELPERS ─────────────────────────────
+:- multifile degraded_road/1.
+degraded_road(partial).
+degraded_road(flooded).
+
+
 %% ─── RED RULES (Critical — act immediately) ────────────────
 
 %% Medicine + roads blocked → RED (patients cannot reach hospital)
@@ -42,8 +48,8 @@ assign_priority(_, blocked, _, empty, red) :- !.
 %% Medicine + low stock (roads clear) → ORANGE
 assign_priority(medicine, _, _, low, orange) :- !.
 
-%% Medicine + partially blocked roads → ORANGE
-assign_priority(medicine, partial, _, _, orange) :- !.
+%% Medicine + partially blocked or flooded roads → ORANGE
+assign_priority(medicine, Road, _, _, orange) :- degraded_road(Road), !.
 
 %% Food + large population (roads not blocked) → ORANGE
 assign_priority(food, _, large, _, orange) :- !.
@@ -51,14 +57,14 @@ assign_priority(food, _, large, _, orange) :- !.
 %% Food + blocked roads (smaller population) → ORANGE
 assign_priority(food, blocked, _, _, orange) :- !.
 
-%% Food + partial roads → ORANGE
-assign_priority(food, partial, _, _, orange) :- !.
+%% Food + partially blocked or flooded roads → ORANGE
+assign_priority(food, Road, _, _, orange) :- degraded_road(Road), !.
 
-%% Shelter + blocked roads → ORANGE (people exposed to elements)
-assign_priority(shelter, blocked, _, _, orange) :- !.
+%% Shelter + blocked, partially blocked or flooded roads → ORANGE (people exposed to elements)
+assign_priority(shelter, Road, _, _, orange) :- (Road = blocked ; degraded_road(Road)), !.
 
-%% Any category + partial roads + empty stock → ORANGE
-assign_priority(_, partial, _, empty, orange) :- !.
+%% Any category + partially blocked or flooded roads + empty stock → ORANGE
+assign_priority(_, Road, _, empty, orange) :- degraded_road(Road), !.
 
 
 %% ─── YELLOW RULES (Standard — schedule within days) ─────────

@@ -1,6 +1,8 @@
 // The function of this file is to provide the AuthContext and AuthProvider for the application.
 import { createContext, useContext, useState, useEffect } from 'react'
 
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
 export const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
@@ -20,7 +22,7 @@ export function AuthProvider({ children }) {
     const storedToken = localStorage.getItem('aura_token')
     if (!storedToken) return
 
-    fetch('/api/auth/me', {
+    fetch(`${BASE_URL}/api/auth/me`, {
       headers: { 'Authorization': `Bearer ${storedToken}` }
     })
       .then(res => {

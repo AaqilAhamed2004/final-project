@@ -68,13 +68,22 @@ export default function RequestForm({ onSubmit, isSubmitting }) {
       road_status: roadStatus,
       population_size: popSize,
       is_public: isPublic,
-      items: items.map(it => ({
-        item_name: it.item_name.trim(),
-        category: it.category,
-        quantity: parseInt(it.quantity, 10) || 1,
-        quantity_needed: parseInt(it.quantity_needed, 10) || parseInt(it.quantity, 10) || 1,
-        current_stock: 0,
-      })),
+      items: items.map(it => {
+        const cleanedKey = it.item_name
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '_')
+          .replace(/(^_+|_+$)/g, '');
+        const availableStock = parseInt(it.quantity, 10);
+        return {
+          item_name: it.item_name.trim(),
+          category: it.category,
+          quantity: isNaN(availableStock) ? 0 : availableStock,
+          quantity_needed: parseInt(it.quantity_needed, 10) || 1,
+          current_stock: isNaN(availableStock) ? 0 : availableStock,
+          prolog_item_key: cleanedKey || null,
+        };
+      }),
     };
 
     onSubmit(payload);

@@ -84,6 +84,9 @@ class InventoryItemResponse(InventoryItem):
     model_config = ConfigDict(populate_by_name=True)
     id: str = Field(alias="_id")
 
+class InventoryBookRequest(BaseModel):
+    quantity: int
+
 
 # ── Public Board Models ─────────────────────────────────────────────────────
 

@@ -61,6 +61,7 @@ export const getInventory       = ()       => apiFetch('/api/inventory')
 export const addInventoryItem   = (data)   => apiFetch('/api/inventory', { method: 'POST', body: JSON.stringify(data) })
 export const updateInventoryItem = (id, d) => apiFetch(`/api/inventory/${id}`, { method: 'PATCH', body: JSON.stringify(d) })
 export const deleteInventoryItem = (id) => apiFetch(`/api/inventory/${id}`, { method: 'DELETE' })
+export const bookInventoryItem = (id, quantity) => apiFetch(`/api/inventory/${id}/book`, { method: 'POST', body: JSON.stringify({ quantity }) })
 
 // ── Public Board ────────────────────────────────────────────────────────
 export const getPublicBoard = ()          => apiFetch('/api/public/board')

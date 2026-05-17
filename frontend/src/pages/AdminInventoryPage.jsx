@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-import { getInventory, addInventoryItem, deleteInventoryItem, updateInventoryItem } from '../api';
+import { getInventory, addInventoryItem, deleteInventoryItem, updateInventoryItem, bookInventoryItem } from '../api';
 import Sidebar from '../components/common/Sidebar';
 import Navbar from '../components/common/Navbar';
 import Button from '../components/common/Button';
 import Card from '../components/common/Card';
-import { LayoutDashboard, Package, FileStack, Truck, Users, Plus, Search, Filter, Calendar, MapPin, Edit2, Trash2, History } from 'lucide-react';
+import { LayoutDashboard, Package, FileStack, Truck, Users, Plus, Search, Filter, Calendar, MapPin, Edit2, Trash2, History, Bookmark } from 'lucide-react';
 import AddSupplyModal from '../components/super-admin/AddSupplyModal';
 
 export default function AdminInventoryPage() {
@@ -64,6 +64,27 @@ export default function AdminInventoryPage() {
       await fetchSupplies();
     } catch (err) {
       alert("Failed to delete item: " + err.message);
+    }
+  };
+
+  const handleBookSupply = async (item) => {
+    const qtyStr = prompt(`Enter quantity to book from ${item.item_name} (Available: ${item.quantity}):`);
+    if (qtyStr === null) return;
+    const qty = parseInt(qtyStr, 10);
+    if (isNaN(qty) || qty <= 0) {
+      alert("Please enter a valid quantity greater than zero.");
+      return;
+    }
+    if (qty > item.quantity) {
+      alert(`Requested quantity exceeds available stock of ${item.quantity}.`);
+      return;
+    }
+    try {
+      await bookInventoryItem(item._id, qty);
+      alert(`Successfully booked ${qty} units of ${item.item_name}!`);
+      await fetchSupplies();
+    } catch (err) {
+      alert("Failed to book item: " + err.message);
     }
   };
 
@@ -205,9 +226,10 @@ export default function AdminInventoryPage() {
                           </td>
                           <td className="py-5 px-6">
                             <div className="flex items-center gap-4 opacity-30 group-hover:opacity-100 transition-opacity">
+                              <button onClick={() => handleBookSupply(item)} className="text-white/60 hover:text-aura-amber transition-colors" title="Book Supply"><Bookmark size={14} /></button>
                               <button onClick={() => handleEdit(item)} className="text-white/60 hover:text-white transition-colors" title="Edit Item"><Edit2 size={14} /></button>
                               <button onClick={() => handleDelete(item)} className="text-white/60 hover:text-aura-red transition-colors" title="Delete Item"><Trash2 size={14} /></button>
-                              <button className="text-white/60 hover:text-aura-amber transition-colors" title="Audit History"><History size={14} /></button>
+                              <button className="text-white/60 hover:text-white transition-colors opacity-40 hover:opacity-100" title="Audit History"><History size={14} /></button>
                             </div>
                           </td>
                         </tr>

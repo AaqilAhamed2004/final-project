@@ -1,29 +1,33 @@
-# ==========================================
-# BACKEND (Python + FastAPI + SWI-Prolog)
-# ==========================================
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
 
-# --- Virtual Environments ---
-venv/
-env/
-ENV/
-.venv/
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
 
-# --- Python Cache (The files causing your 3k+ issue) ---
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
 
-# --- Pytest & Coverage (For testing phase) ---
-.pytest_cache/
-.coverage
-htmlcov/
-coverage.xml
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
 
-# --- SWI-Prolog ---
-*.pl~
-*.swp
-
-# --- Logs & Databases ---
-*.log
-*.sqlite3
+### VS Code ###
+.vscode/

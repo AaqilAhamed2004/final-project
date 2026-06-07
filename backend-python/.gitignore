@@ -1,0 +1,29 @@
+# ==========================================
+# BACKEND (Python + FastAPI + SWI-Prolog)
+# ==========================================
+
+# --- Virtual Environments ---
+venv/
+env/
+ENV/
+.venv/
+
+# --- Python Cache (The files causing your 3k+ issue) ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# --- Pytest & Coverage (For testing phase) ---
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# --- SWI-Prolog ---
+*.pl~
+*.swp
+
+# --- Logs & Databases ---
+*.log
+*.sqlite3

@@ -9,7 +9,7 @@ export default function Badge({ priority, className = '' }) {
 
   return (
     <span className={`inline-flex items-center px-2 py-1 text-xs font-mono tracking-wider rounded uppercase ${colors} ${className}`}>
-      {priority === PRIORITY_LEVELS.CRITICAL && <span className="w-1.5 h-1.5 rounded-full bg-current mr-2 animate-pulse" />}
+      {(priority || '').toUpperCase() === PRIORITY_LEVELS.CRITICAL && <span className="w-1.5 h-1.5 rounded-full bg-current mr-2 animate-pulse" />}
       {label}
     </span>
   );

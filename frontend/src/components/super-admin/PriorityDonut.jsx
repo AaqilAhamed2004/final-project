@@ -14,9 +14,10 @@ export default function PriorityDonut({ requests }) {
   const activeRequests = requests.filter(r => r.status === 'pending');
   const total = activeRequests.length;
   
-  const critical = activeRequests.filter(r => r.priority_level === PRIORITY_LEVELS.CRITICAL).length;
-  const moderate = activeRequests.filter(r => r.priority_level === PRIORITY_LEVELS.URGENT).length;
-  const low = activeRequests.filter(r => r.priority_level === PRIORITY_LEVELS.STANDARD).length;
+  const critical = activeRequests.filter(r => (r.priority_level || '').toUpperCase() === PRIORITY_LEVELS.CRITICAL).length;
+  const moderate = activeRequests.filter(r => (r.priority_level || '').toUpperCase() === PRIORITY_LEVELS.URGENT).length;
+  const low = activeRequests.filter(r => (r.priority_level || '').toUpperCase() === PRIORITY_LEVELS.STANDARD).length;
+
 
   const data = [
     { name: 'Critical', value: critical, color: 'var(--color-red)' }, // text-aura-red

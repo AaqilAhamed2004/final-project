@@ -11,8 +11,8 @@ export default function ActiveLog({ requests, onViewDetails, onStatusUpdate }) {
   const columns = [
     { 
       header: 'ID', 
-      accessor: '_id',
-      cell: (row) => <span className="text-aura-amber font-mono text-sm font-bold tracking-wider" title={row._id}>{formatRequestId(row._id?.slice(-6) || 'N/A')}</span>
+      accessor: 'id',
+      cell: (row) => <span className="text-aura-amber font-mono text-sm font-bold tracking-wider" title={row.id || row._id}>{formatRequestId((row.id || row._id)?.slice(-6) || 'N/A')}</span>
     },
     { 
       header: 'LOCATION', 
@@ -42,7 +42,7 @@ export default function ActiveLog({ requests, onViewDetails, onStatusUpdate }) {
           
           {row.status === 'pending' && (
             <button 
-              onClick={() => onStatusUpdate(row._id, 'approved')}
+              onClick={() => onStatusUpdate(row.id || row._id, 'approved')}
               className="text-aura-amber/40 hover:text-aura-amber transition-colors p-1"
               title="Approve Request"
             >
@@ -52,7 +52,7 @@ export default function ActiveLog({ requests, onViewDetails, onStatusUpdate }) {
 
           {row.status === 'ongoing' && (
             <button 
-              onClick={() => onStatusUpdate(row._id, 'completed')}
+              onClick={() => onStatusUpdate(row.id || row._id, 'completed')}
               className="text-green-500/40 hover:text-green-500 transition-colors p-1"
               title="Mark as Completed"
             >

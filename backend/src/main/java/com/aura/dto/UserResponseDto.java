@@ -1,5 +1,6 @@
 package com.aura.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,5 +15,7 @@ public class UserResponseDto {
     private String email;
     private String fullName;
     private String role;
+
+    @JsonProperty("is_active")
     private boolean isActive;
 }

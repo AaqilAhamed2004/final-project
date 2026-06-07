@@ -122,7 +122,7 @@ export default function ProfilePage() {
                         </div>
                         <div className="space-y-2">
                            <label className="text-[10px] font-mono font-bold text-aura-text-faint uppercase tracking-widest">Personnel ID</label>
-                           <div className="w-full bg-aura-surface border border-aura-border rounded-lg p-4 text-sm text-aura-accent font-mono tracking-widest uppercase">AURA-SEC-{currentUser?._id?.slice(-8).toUpperCase()}</div>
+                           <div className="w-full bg-aura-surface border border-aura-border rounded-lg p-4 text-sm text-aura-accent font-mono tracking-widest uppercase">AURA-SEC-{(currentUser?.id || currentUser?._id)?.slice(-8).toUpperCase()}</div>
                         </div>
                      </div>
                   </Card>

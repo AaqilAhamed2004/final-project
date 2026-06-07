@@ -122,8 +122,8 @@ export default function AdminRequestsPage() {
                            </thead>
                            <tbody className="divide-y divide-aura-border">
                               {requests.map((req) => (
-                                 <tr key={req._id} className="hover:bg-aura-surface-hover transition-colors group cursor-pointer">
-                                    <td className="py-5 px-6 font-mono text-[10px] font-bold text-aura-accent tracking-widest uppercase">RR-{req._id?.slice(-4)}</td>
+                                 <tr key={req.id || req._id} className="hover:bg-aura-surface-hover transition-colors group cursor-pointer">
+                                    <td className="py-5 px-6 font-mono text-[10px] font-bold text-aura-accent tracking-widest uppercase">RR-{(req.id || req._id)?.slice(-4)}</td>
                                     <td className="py-5 px-6"><Badge priority={req.priority_level} /></td>
                                     <td className="py-5 px-6"><StatusBadge status={req.status} /></td>
                                     <td className="py-5 px-6 text-[10px] font-mono text-aura-text-faint uppercase">{req.request_type || 'Aura-Led'}</td>
@@ -132,12 +132,12 @@ export default function AdminRequestsPage() {
                                           <div className="w-5 h-5 rounded-full bg-aura-surface border border-aura-border flex items-center justify-center text-[8px] font-mono text-aura-text-muted uppercase tracking-widest">
                                              <Users size={10} />
                                           </div>
-                                          <div className="text-[11px] font-sans text-aura-text-muted">Commander {req._id?.slice(0, 2)}</div>
+                                          <div className="text-[11px] font-sans text-aura-text-muted">Commander {(req.id || req._id)?.slice(0, 2)}</div>
                                        </div>
                                     </td>
                                     <td className="py-5 px-6">
                                        <div className="text-[11px] font-sans text-aura-text truncate max-w-[120px]" title={req.location}>{req.location}</div>
-                                       <div className="text-[9px] font-mono text-aura-text-faint uppercase mt-0.5 tracking-tighter truncate max-w-[120px]">09.232° N | {req._id?.slice(-3)} E</div>
+                                       <div className="text-[9px] font-mono text-aura-text-faint uppercase mt-0.5 tracking-tighter truncate max-w-[120px]">09.232° N | {(req.id || req._id)?.slice(-3)} E</div>
                                     </td>
                                     <td className="py-5 px-6">
                                        <div className="text-[10px] font-mono text-aura-text-muted leading-relaxed">

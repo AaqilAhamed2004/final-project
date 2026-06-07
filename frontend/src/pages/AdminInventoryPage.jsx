@@ -53,7 +53,7 @@ export default function AdminInventoryPage() {
       return;
     }
     try {
-      await updateInventoryItem(item._id, { quantity: newQty });
+      await updateInventoryItem(item.id || item._id, { quantity: newQty });
       await fetchSupplies();
     } catch (err) {
       alert("Failed to update item: " + err.message);
@@ -63,7 +63,7 @@ export default function AdminInventoryPage() {
   const handleDelete = async (item) => {
     if (!window.confirm(`Are you sure you want to delete ${item.item_name} from inventory?`)) return;
     try {
-      await deleteInventoryItem(item._id);
+      await deleteInventoryItem(item.id || item._id);
       await fetchSupplies();
     } catch (err) {
       alert("Failed to delete item: " + err.message);
@@ -83,7 +83,7 @@ export default function AdminInventoryPage() {
       return;
     }
     try {
-      await bookInventoryItem(item._id, qty);
+      await bookInventoryItem(item.id || item._id, qty);
       alert(`Successfully booked ${qty} units of ${item.item_name}!`);
       await fetchSupplies();
     } catch (err) {
@@ -234,9 +234,9 @@ export default function AdminInventoryPage() {
                         </tr>
                       )}
                       {filteredSupplies.map((item) => (
-                        <tr key={item._id} className="hover:bg-aura-surface-hover transition-colors group">
+                        <tr key={item.id || item._id} className="hover:bg-aura-surface-hover transition-colors group">
                           <td className="py-5 px-6">
-                            <div className="text-[10px] font-mono font-bold text-aura-accent tracking-widest uppercase">SR-{item._id?.slice(-4)}-A</div>
+                            <div className="text-[10px] font-mono font-bold text-aura-accent tracking-widest uppercase">SR-{(item.id || item._id)?.slice(-4)}-A</div>
                             <div className="text-[8px] font-mono text-aura-text-faint mt-0.5">DETAILED</div>
                           </td>
                           <td className="py-5 px-6">

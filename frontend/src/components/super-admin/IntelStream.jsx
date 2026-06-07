@@ -10,13 +10,13 @@ export default function IntelStream({ supplies, requests }) {
     // 1. Critical Requests
     requests.filter(r => r.prolog_analysis?.priority_level === 'red').forEach(r => {
       events.push({
-        id: `req-${r._id}`,
+        id: `req-${r.id || r._id}`,
         type: 'CRITICAL ALERT',
         typeColor: 'text-aura-red',
         dotColor: 'bg-aura-red',
         timestamp: new Date(r.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        message: `High-priority request for ${r.supply_type} in ${r.location_name} requires immediate attention.`,
-        meta: `REQ ID: ${r._id?.slice(-6) || 'N/A'}`,
+        message: `High-priority request for ${r.supply_type || r.title || 'supplies'} in ${r.location_name || r.location || 'unknown location'} requires immediate attention.`,
+        meta: `REQ ID: ${(r.id || r._id)?.slice(-6) || 'N/A'}`,
         sortTime: new Date(r.created_at || Date.now()).getTime()
       });
     });
@@ -24,7 +24,7 @@ export default function IntelStream({ supplies, requests }) {
     // 2. Low Stock Alerts
     supplies.filter(s => s.quantity < 20).forEach(s => {
       events.push({
-        id: `stock-${s._id}`,
+        id: `stock-${s.id || s._id}`,
         type: 'INVENTORY WARNING',
         typeColor: 'text-aura-accent',
         dotColor: 'bg-aura-accent',
@@ -38,13 +38,13 @@ export default function IntelStream({ supplies, requests }) {
     // 3. New Requests
     requests.filter(r => r.status === 'pending' && r.prolog_analysis?.priority_level !== 'red').slice(0, 3).forEach(r => {
       events.push({
-        id: `pending-${r._id}`,
+        id: `pending-${r.id || r._id}`,
         type: 'NEW REQUEST',
         typeColor: 'text-aura-blue',
         dotColor: 'bg-aura-blue',
         timestamp: new Date(r.created_at || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        message: `Relief request submitted for ${r.supply_type} at ${r.location_name}.`,
-        meta: `OFFICER ID: ${r.gn_officer_id?.slice(-6) || 'N/A'}`,
+        message: `Relief request submitted for ${r.supply_type || r.title || 'supplies'} at ${r.location_name || r.location || 'unknown location'}.`,
+        meta: `OFFICER ID: ${(r.creator_id || r.gn_officer_id)?.slice(-6) || 'N/A'}`,
         sortTime: new Date(r.created_at || Date.now()).getTime()
       });
     });

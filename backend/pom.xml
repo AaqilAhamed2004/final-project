@@ -78,6 +78,18 @@
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<!-- Required for @WebMvcTest, @AutoConfigureMockMvc and other test slices -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-test-autoconfigure</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<!-- Required for @WithMockUser in controller security tests -->
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-test</artifactId>
+			<scope>test</scope>
+		</dependency>
 		<!-- JWT Library -->
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>

@@ -79,15 +79,15 @@ export default function AdminRequestsPage() {
         />
         
         <main className="flex-1 p-4 lg:p-8 overflow-y-auto">
-          <div className="max-w-[1600px] mx-auto space-y-8">
+          <div className="max-w-400 mx-auto space-y-8">
             
             {/* Top Section - Map Placeholder */}
-            <Card className="p-0 border-aura-border bg-aura-card overflow-hidden relative min-h-[300px]">
+            <Card className="p-0 border-aura-border bg-aura-card overflow-hidden relative min-h-75">
                <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
                   <div className="w-8 h-8 rounded border border-aura-border bg-black/60 flex items-center justify-center text-aura-text-faint hover:text-aura-text cursor-pointer">+</div>
                   <div className="w-8 h-8 rounded border border-aura-border bg-black/60 flex items-center justify-center text-aura-text-faint hover:text-aura-text cursor-pointer">-</div>
                </div>
-               <div className="w-full h-[300px] bg-aura-surface relative flex items-center justify-center">
+               <div className="w-full h-75 bg-aura-surface relative flex items-center justify-center">
                   <Globe size={120} className="text-aura-text-faint opacity-10" />
                   <div className="absolute inset-0 flex items-center justify-center">
                      <span className="text-[10px] font-mono tracking-[0.4em] text-aura-text-faint uppercase font-bold">Tactical Deployment Map (Simulated)</span>
@@ -112,7 +112,7 @@ export default function AdminRequestsPage() {
 
                   <Card className="flex-1 p-0 overflow-hidden shadow-aura-card">
                      <div className="overflow-x-auto">
-                        <table className="w-full border-collapse min-w-[1100px]">
+                        <table className="w-full border-collapse min-w-275">
                            <thead>
                               <tr className="border-b border-aura-border bg-aura-surface">
                                  {['Request ID', 'Priority', 'Status', 'Request Type', 'Requester', 'Request Location', 'Specific Items', 'Urgency', 'ETD', 'Assigned Team'].map(h => (
@@ -136,8 +136,8 @@ export default function AdminRequestsPage() {
                                        </div>
                                     </td>
                                     <td className="py-5 px-6">
-                                       <div className="text-[11px] font-sans text-aura-text truncate max-w-[120px]" title={req.location}>{req.location}</div>
-                                       <div className="text-[9px] font-mono text-aura-text-faint uppercase mt-0.5 tracking-tighter truncate max-w-[120px]">09.232° N | {(req.id || req._id)?.slice(-3)} E</div>
+                                       <div className="text-[11px] font-sans text-aura-text truncate max-w-30" title={req.location}>{req.location}</div>
+                                       <div className="text-[9px] font-mono text-aura-text-faint uppercase mt-0.5 tracking-tighter truncate max-w-30">09.232° N | {(req.id || req._id)?.slice(-3)} E</div>
                                     </td>
                                     <td className="py-5 px-6">
                                        <div className="text-[10px] font-mono text-aura-text-muted leading-relaxed">
@@ -165,7 +165,7 @@ export default function AdminRequestsPage() {
 
                {/* Right Column - Deep Dive Sidebar */}
                <div className="col-span-12 xl:col-span-3 flex flex-col gap-6">
-                  <Card className="flex flex-col bg-aura-bg border-aura-border p-6 h-full min-h-[600px]">
+                  <Card className="flex flex-col bg-aura-bg border-aura-border p-6 h-full min-h-150">
                      <div className="mb-8">
                         <h3 className="text-lg font-bold font-sans tracking-tight text-aura-text">Request Deep-Dive</h3>
                         <div className="flex items-center gap-2 mt-1">

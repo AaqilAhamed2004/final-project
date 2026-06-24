@@ -1,0 +1,1802 @@
+# AURA Platform — Complete Multi-Tenant SaaS Implementation Plan
+
+> **Version**: 3.0 (Final Detailed)
+> **Date**: June 2026
+> **Scope**: Multi-tenancy, Cloudflare R2, MongoDB Atlas, Platform Owner, Verified Onboarding
+
+---
+
+## Table of Contents
+1. [Architecture Overview](#1-architecture-overview)
+2. [Role Hierarchy & Onboarding Flows](#2-role-hierarchy--onboarding-flows)
+3. [Phase 0: Multi-Tenancy Foundation](#3-phase-0-multi-tenancy-foundation)
+4. [Phase 1: Secure Registration with Admin Approval](#4-phase-1-secure-registration-with-admin-approval)
+5. [Phase 2: Cloudflare R2 Document Storage](#5-phase-2-cloudflare-r2-document-storage)
+6. [Phase 3: Platform Owner Dashboard](#6-phase-3-platform-owner-dashboard)
+7. [Phase 4: Enhanced Booking & Partial Donations](#7-phase-4-enhanced-booking--partial-donations)
+8. [Phase 5: Frontend Changes](#8-phase-5-frontend-changes)
+9. [Phase 6: Data Migration & MongoDB Atlas](#9-phase-6-data-migration--mongodb-atlas)
+10. [Complete File Change Registry](#10-complete-file-change-registry)
+11. [Verification Plan](#11-verification-plan)
+12. [Senior Developer Analysis & Recommendations](#12-senior-developer-analysis--recommendations)
+
+---
+
+## 1. Architecture Overview
+
+```
+┌───────────────────────────────────────────────────────────────────────┐
+│                    AURA SaaS Platform Architecture                     │
+│                                                                       │
+│  ┌─────────────────┐     ┌──────────────────┐     ┌───────────────┐  │
+│  │ Platform Owner   │     │ Organization A   │     │ Organization B│  │
+│  │ (Root Admin)     │     │ (Tenant A)       │     │ (Tenant B)    │  │
+│  │                  │     │                  │     │               │  │
+│  │ - Approves Orgs  │     │ - Super Admin    │     │ - Super Admin │  │
+│  │ - Billing mgmt   │     │ - Donors (12)    │     │ - Donors (8)  │  │
+│  │ - NO doc access  │     │ - Reps (5)       │     │ - Reps (3)    │  │
+│  └────────┬─────────┘     └────────┬─────────┘     └──────┬────────┘  │
+│           │                        │                       │          │
+│           └────────────────────────┼───────────────────────┘          │
+│                                    │                                  │
+│                           ┌────────▼────────┐                        │
+│                           │  Spring Boot    │                        │
+│                           │  Backend API    │                        │
+│                           │  (Port 8000)    │                        │
+│                           └───┬─────────┬───┘                        │
+│                               │         │                            │
+│                    ┌──────────▼──┐  ┌───▼──────────┐                 │
+│                    │ MongoDB     │  │ Cloudflare   │                 │
+│                    │ Atlas       │  │ R2 Bucket    │                 │
+│                    │ (aura_db)   │  │ (documents)  │                 │
+│                    └─────────────┘  └──────────────┘                 │
+└───────────────────────────────────────────────────────────────────────┘
+```
+
+### 1.1 How Tenant Identification Works
+
+There are two ways the backend knows which tenant a request belongs to:
+
+**For authenticated requests (logged-in users):**
+```
+Frontend → Bearer JWT Token → JwtAuthFilter extracts userId
+→ UserRepository.findById(userId) → User.getTenantId()
+→ TenantContext.setTenantId(tenantId)
+→ All service queries automatically scoped to this tenant
+```
+
+**For public requests (registration, public board viewing):**
+```
+Frontend → X-Tenant-ID header (from VITE_TENANT_ID env var)
+→ TenantFilter reads header → TenantContext.setTenantId(headerValue)
+→ Public service queries scoped to this tenant
+```
+
+> [!IMPORTANT]
+> **Security Rule**: For authenticated requests, the backend **always uses the tenant from the JWT/database**, ignoring any `X-Tenant-ID` header. This prevents tenant spoofing. The `X-Tenant-ID` header is ONLY trusted for unauthenticated public endpoints.
+
+### 1.2 How Document Uploads Work (Backend-Managed)
+
+```
+1. Frontend sends multipart/form-data POST to /api/auth/register
+   (includes form fields + file attachments)
+
+2. Backend AuthController receives MultipartFile[] documents
+
+3. Backend CloudflareR2Service.uploadDocument():
+   - Validates file type (JPEG, PNG, PDF only)
+   - Validates file size (max 5MB per file, max 3 files)
+   - Streams file to R2: documents/{tenantId}/{userId}/{uuid}-{filename}
+   - Returns the R2 object key (NOT a URL)
+
+4. Backend stores the R2 key in User.documents[] array in MongoDB
+
+5. When Super Admin wants to view documents:
+   - Backend generates a pre-signed GET URL (valid 10 minutes)
+   - Returns URL to frontend
+   - Frontend renders the document in an <img> or <iframe>
+   - After 10 minutes, URL expires and is useless
+```
+
+### 1.3 What Is a "Pre-Signed URL" (Explained Simply)
+
+A **pre-signed URL** is a temporary, secret download link. Think of it like this:
+
+- Your documents are locked in a safe (Cloudflare R2 bucket — private by default)
+- Nobody can access them without a key
+- When the Super Admin clicks "View Document", the backend creates a **one-time-use key** that expires in 10 minutes
+- This key is embedded in a URL: `https://bucket.r2.dev/documents/TEN-ABC/user123/nic.jpg?signature=XXXXX&expires=1718700000`
+- Anyone with this URL can download the file for 10 minutes
+- After 10 minutes: the URL returns `403 Forbidden` — the key is dead
+- A new key must be generated for each viewing session
+
+**Why this matters for security:**
+- Documents are NEVER publicly accessible
+- Even if someone intercepts a URL, it stops working quickly
+- The Platform Owner cannot generate these URLs (they have no API endpoint for it)
+- Only the organization's Super Admin can request pre-signed URLs
+
+---
+
+## 2. Role Hierarchy & Onboarding Flows
+
+### 2.1 Four Roles
+
+| Role | Internal Name | Who Creates Them | Approval By |
+|------|---------------|-------------------|-------------|
+| Platform Owner | `platform_owner` | Seeded in DB manually (or first-run setup) | Self (bootstrapped) |
+| Organization Admin | `super_admin` | Self-registers on SaaS landing page | Platform Owner |
+| Representative | `gn_officer` | Self-registers on organization's tenant site | Organization Super Admin |
+| Donor | `donor` | Self-registers on organization's tenant site | Organization Super Admin |
+
+### 2.2 Flow 1: Organization Onboarding
+
+```
+┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
+│  1. Org registers │────▶│  2. Status:      │────▶│  3. Platform     │
+│  on /saas-signup  │     │  pending         │     │  Owner approves  │
+│                   │     │  isActive: false  │     │                  │
+│  TEN-A1B2C3D4     │     │  (Cannot login)   │     │  isActive: true  │
+│  generated        │     │                   │     │  (Can login now) │
+└──────────────────┘     └──────────────────┘     └──────────────────┘
+```
+
+### 2.3 Flow 2: Representative / Donor Onboarding
+
+```
+┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
+│  1. User registers│────▶│  2. Status:      │────▶│  3. Org Super    │
+│  on tenant's site │     │  pending         │     │  Admin approves  │
+│  with documents   │     │  isActive: false  │     │                  │
+│                   │     │  Docs in R2      │     │  tenantId set    │
+│  Docs uploaded    │     │  (Cannot login)   │     │  isActive: true  │
+│  to R2 via backend│     │                   │     │  (Can login now) │
+└──────────────────┘     └──────────────────┘     └──────────────────┘
+```
+
+### 2.4 Donation Confirmation Flow (Super Admin Must Confirm)
+
+```
+┌──────────┐     ┌───────────┐     ┌──────────────┐     ┌───────────┐
+│ Donor    │────▶│ Booking   │────▶│ Donor sends  │────▶│ SP-Admin  │
+│ books    │     │ status:   │     │ product &    │     │ confirms  │
+│ request  │     │ "pending" │     │ contacts     │     │ donation  │
+│ (qty: 50)│     │           │     │ requester    │     │ received  │
+└──────────┘     └───────────┘     └──────────────┘     └───────────┘
+                                           │
+                                   ┌───────▼────────┐
+                                   │ Requester OR   │
+                                   │ Donor contacts │
+                                   │ SP-Admin to    │
+                                   │ confirm receipt│
+                                   └────────────────┘
+```
+
+---
+
+## 3. Phase 0: Multi-Tenancy Foundation
+
+### 3.1 Utility Classes
+
+---
+
+#### [NEW] [TenantIdGenerator.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/util/TenantIdGenerator.java)
+
+```java
+package com.aura.util;
+
+import java.util.UUID;
+
+/**
+ * Generates unique tenant identifiers in the format: TEN-XXXXXXXX
+ * (8-character uppercase hex derived from UUID).
+ */
+public class TenantIdGenerator {
+    public static String generate() {
+        String uuid = UUID.randomUUID().toString().replace("-", "");
+        return "TEN-" + uuid.substring(0, 8).toUpperCase();
+    }
+}
+```
+
+---
+
+#### [NEW] [TenantContext.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/security/TenantContext.java)
+
+```java
+package com.aura.security;
+
+/**
+ * Thread-local storage for the current request's tenant ID.
+ * Set by JwtAuthFilter (for authenticated requests) or TenantFilter (for public requests).
+ * Read by all service methods to scope database queries.
+ *
+ * IMPORTANT: Always call clear() in a finally block to prevent tenant leakage
+ * between requests in the same thread (servlet thread pool reuse).
+ */
+public class TenantContext {
+    private static final ThreadLocal<String> currentTenant = new ThreadLocal<>();
+
+    public static void setTenantId(String tenantId) {
+        currentTenant.set(tenantId);
+    }
+
+    public static String getTenantId() {
+        return currentTenant.get();
+    }
+
+    public static void clear() {
+        currentTenant.remove();
+    }
+}
+```
+
+---
+
+#### [NEW] [TenantFilter.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/security/TenantFilter.java)
+
+Intercepts public (unauthenticated) requests and reads the `X-Tenant-ID` header:
+
+```java
+package com.aura.security;
+
+import jakarta.servlet.*;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+
+/**
+ * Sets TenantContext from the X-Tenant-ID header for PUBLIC endpoints.
+ * Runs BEFORE JwtAuthFilter. If the user is authenticated,
+ * JwtAuthFilter will OVERRIDE this value with the user's actual tenantId.
+ */
+@Component
+@Order(Ordered.HIGHEST_PRECEDENCE)
+public class TenantFilter implements Filter {
+    @Override
+    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+            throws IOException, ServletException {
+        HttpServletRequest httpRequest = (HttpServletRequest) request;
+        String tenantHeader = httpRequest.getHeader("X-Tenant-ID");
+        if (tenantHeader != null && !tenantHeader.isBlank()) {
+            TenantContext.setTenantId(tenantHeader.trim());
+        }
+        try {
+            chain.doFilter(request, response);
+        } finally {
+            TenantContext.clear();
+        }
+    }
+}
+```
+
+---
+
+### 3.2 Schema Changes (Adding tenantId to All Entities)
+
+---
+
+#### [MODIFY] [User.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/schema/User.java)
+
+Current file is 36 lines. Full replacement:
+
+```diff
+ @Document(collection = "users")
+ @Data @NoArgsConstructor @AllArgsConstructor @Builder
+ public class User {
+     @Id
+     private String id;
+
++    @Indexed
++    @Field("tenant_id")
++    private String tenantId;
++
+     @Indexed(unique = true)
+     private String email;
+
+     @Field("hashed_password")
+     private String password;
+
+     @Field("full_name")
+     private String fullName;
+
+-    private String role; // donor, gn_officer, super_admin
++    private String role; // donor, gn_officer, super_admin, platform_owner
++
++    @Field("phone_number")
++    private String phoneNumber;
++
++    private String address;
++
++    @Field("organization_name")
++    private String organizationName; // Only for super_admin role
++
++    @Field("documents")
++    @Builder.Default
++    private List<String> documents = new ArrayList<>(); // R2 object keys
++
++    @Field("approval_status")
++    @Builder.Default
++    private String approvalStatus = "pending"; // pending, approved, rejected
++
++    @Field("rejection_reason")
++    private String rejectionReason;
++
++    @Field("approved_by")
++    private String approvedBy;
++
++    @Field("approved_at")
++    private Instant approvedAt;
++
++    @Field("registered_at")
++    private Instant registeredAt;
+
+     @Field("is_active")
+     @Builder.Default
+-    private boolean isActive = true;
++    private boolean isActive = false; // Default FALSE — only true after approval
+ }
+```
+
+Add these imports to the top:
+```java
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+```
+
+---
+
+#### [MODIFY] [ReliefRequest.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/schema/ReliefRequest.java)
+
+Add `tenantId` and `totalDonated`:
+
+```diff
+ public class ReliefRequest {
+     @Id
+     private String id;
+
++    @Indexed
++    @Field("tenant_id")
++    private String tenantId;
++
+     @Field("creator_id")
+     @Builder.Default
+     private String creatorId = "system";
+
++    @Field("total_donated")
++    @Builder.Default
++    private int totalDonated = 0;
++
+     @Builder.Default
+     private String title = "Untitled Relief Request";
+     // ... rest unchanged
+```
+
+Add import: `import org.springframework.data.mongodb.core.index.Indexed;`
+
+---
+
+#### [MODIFY] [Booking.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/schema/Booking.java)
+
+Add `tenantId` and donation tracking fields:
+
+```diff
+ public class Booking {
+     @Id
+     private String id;
+
++    @Indexed
++    @Field("tenant_id")
++    private String tenantId;
++
+     // Donor Booking fields
+     @Field("request_id")
+     private String requestId;
+
+     private String notes;
+
+     @Field("donor_id")
+     private String donorId;
+
+     @Field("booked_at")
+     private Instant bookedAt;
+
++    @Field("donated_quantity")
++    private Integer donatedQuantity;
++
++    @Field("confirmation_status")
++    @Builder.Default
++    private String confirmationStatus = "pending"; // pending, confirmed, rejected
++
++    @Field("confirmed_by")
++    private String confirmedBy;
++
++    @Field("confirmed_at")
++    private Instant confirmedAt;
++
++    @Field("donor_name")
++    private String donorName;
++
++    @Field("donor_phone")
++    private String donorPhone;
++
+     // Inventory Booking fields
+     // ... rest unchanged
+```
+
+Add import: `import org.springframework.data.mongodb.core.index.Indexed;`
+
+---
+
+#### [MODIFY] [InventoryItem.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/schema/InventoryItem.java)
+
+```diff
+ public class InventoryItem {
+     @Id
+     private String id;
+
++    @Indexed
++    @Field("tenant_id")
++    private String tenantId;
++
+     @Field("item_name")
+     private String itemName;
+     // ... rest unchanged
+```
+
+---
+
+#### [MODIFY] [PrologAnalysis.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/schema/PrologAnalysis.java)
+
+```diff
+ public class PrologAnalysis {
+     @Id
+     private String id;
+
++    @Indexed
++    @Field("tenant_id")
++    private String tenantId;
++
+     @Indexed(unique = true)
+     @Field("request_id")
+     private String requestId;
+     // ... rest unchanged
+```
+
+---
+
+#### [MODIFY] [RequestItem.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/schema/RequestItem.java)
+
+```diff
+     @Field("current_stock")
+     @Builder.Default
+     private Integer currentStock = 0;
+
++    @Field("donated_quantity")
++    @Builder.Default
++    private Integer donatedQuantity = 0;
++
+     @Field("prolog_item_key")
+     private String prologItemKey;
+```
+
+---
+
+### 3.3 Repository Changes (Tenant-Scoped Queries)
+
+---
+
+#### [MODIFY] [UserRepository.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/repository/UserRepository.java)
+
+```diff
+ public interface UserRepository extends MongoRepository<User, String> {
+     Optional<User> findByEmail(String email);
+     long countByRole(String role);
++
++    // Tenant-scoped queries
++    List<User> findByTenantId(String tenantId);
++    List<User> findByTenantIdAndApprovalStatus(String tenantId, String approvalStatus);
++    List<User> findByTenantIdAndRole(String tenantId, String role);
++    List<User> findByTenantIdAndRoleAndApprovalStatus(String tenantId, String role, String approvalStatus);
++    long countByTenantIdAndRole(String tenantId, String role);
++    long countByTenantIdAndApprovalStatus(String tenantId, String approvalStatus);
++
++    // Platform Owner queries (cross-tenant)
++    List<User> findByRoleAndApprovalStatus(String role, String approvalStatus);
++    List<User> findByRole(String role);
+ }
+```
+
+Add import: `import java.util.List;`
+
+---
+
+#### [MODIFY] [RequestRepository.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/repository/RequestRepository.java)
+
+```diff
+ public interface RequestRepository extends MongoRepository<ReliefRequest, String> {
+     List<ReliefRequest> findByIsPublicTrueOrderByCreatedAtDesc();
+     long countByStatus(String status);
++
++    // Tenant-scoped queries
++    List<ReliefRequest> findByTenantIdOrderByCreatedAtDesc(String tenantId);
++    List<ReliefRequest> findByTenantIdAndIsPublicTrueOrderByCreatedAtDesc(String tenantId);
++    List<ReliefRequest> findByTenantIdAndIsPublicTrueAndStatusNotOrderByCreatedAtDesc(String tenantId, String status);
++    long countByTenantIdAndStatus(String tenantId, String status);
++    List<ReliefRequest> findByTenantIdAndCreatorId(String tenantId, String creatorId);
++    long countByTenantId(String tenantId);
+ }
+```
+
+---
+
+#### [MODIFY] [BookingRepository.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/repository/BookingRepository.java)
+
+```diff
+ public interface BookingRepository extends MongoRepository<Booking, String> {
+     List<Booking> findByDonorIdOrderByBookedAtDesc(String donorId);
++
++    // Tenant-scoped queries
++    List<Booking> findByTenantIdAndRequestId(String tenantId, String requestId);
++    List<Booking> findByTenantIdAndDonorIdOrderByBookedAtDesc(String tenantId, String donorId);
++    List<Booking> findByTenantIdAndConfirmationStatus(String tenantId, String confirmationStatus);
++    List<Booking> findByTenantIdAndConfirmationStatusOrderByBookedAtDesc(String tenantId, String confirmationStatus);
++    List<Booking> findByRequestId(String requestId);
+ }
+```
+
+---
+
+#### [MODIFY] [InventoryRepository.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/repository/InventoryRepository.java)
+
+```diff
+ public interface InventoryRepository extends MongoRepository<InventoryItem, String> {
++    List<InventoryItem> findByTenantId(String tenantId);
++    Optional<InventoryItem> findByTenantIdAndId(String tenantId, String id);
+ }
+```
+
+Add imports: `import java.util.List; import java.util.Optional;`
+
+---
+
+#### [MODIFY] [AnalysisRepository.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/repository/AnalysisRepository.java)
+
+```diff
+ public interface AnalysisRepository extends MongoRepository<PrologAnalysis, String> {
+     Optional<PrologAnalysis> findByRequestId(String requestId);
++    Optional<PrologAnalysis> findByTenantIdAndRequestId(String tenantId, String requestId);
+ }
+```
+
+---
+
+### 3.4 JWT Changes (Adding tenantId to Token)
+
+---
+
+#### [MODIFY] [JwtUtil.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/security/JwtUtil.java)
+
+```diff
+-    public String generateToken(String userId, String role) {
++    public String generateToken(String userId, String role, String tenantId) {
+         Map<String, Object> claims = new HashMap<>();
+         claims.put("role", role);
++        claims.put("tenant_id", tenantId);
+         return createToken(claims, userId);
+     }
+
++    public String extractTenantId(String token) {
++        return extractClaim(token, claims -> claims.get("tenant_id", String.class));
++    }
+```
+
+---
+
+#### [MODIFY] [JwtAuthFilter.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/security/JwtAuthFilter.java)
+
+Add `TenantContext` setting after user is validated, and `clear()` in finally block:
+
+```diff
+     @Override
+     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+             throws ServletException, IOException {
+         final String authHeader = request.getHeader("Authorization");
+         final String jwt;
+         final String userId;
+
+         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+             filterChain.doFilter(request, response);
+             return;
+         }
+
+         jwt = authHeader.substring(7);
+         try {
+             userId = jwtUtil.extractUserId(jwt);
+
+             if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                 Optional<User> userOpt = userRepository.findById(userId);
+
+                 if (userOpt.isPresent()) {
+                     User user = userOpt.get();
+                     if (user.isActive() && jwtUtil.validateToken(jwt, user.getId())) {
++                        // Set tenant context from the authenticated user (overrides X-Tenant-ID header)
++                        TenantContext.setTenantId(user.getTenantId());
++
+                         String role = user.getRole();
+                         SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role.toUpperCase());
+
+                         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                                 user, null, Collections.singletonList(authority)
+                         );
+                         authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                         SecurityContextHolder.getContext().setAuthentication(authToken);
+                     }
+                 }
+             }
+         } catch (Exception e) {
+             // Silently fail authentication
+         }
+
+         filterChain.doFilter(request, response);
+     }
+```
+
+---
+
+### 3.5 Service Layer Changes (Tenant Scoping)
+
+---
+
+#### [MODIFY] [RequestService.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/service/RequestService.java)
+
+Lines 56–68 (createRequest) — add `tenantId`:
+```diff
+         ReliefRequest request = ReliefRequest.builder()
++                .tenantId(TenantContext.getTenantId())
+                 .title(title)
+                 .description(dto.getDescription())
+                 // ... rest unchanged
+```
+
+Lines 81–89 (getAllRequests) — scope to tenant:
+```diff
+     public List<ReliefRequest> getAllRequests() {
+-        return requestRepository.findAll().stream()
++        String tenantId = TenantContext.getTenantId();
++        return requestRepository.findByTenantIdOrderByCreatedAtDesc(tenantId).stream()
+                 .sorted(/* existing sort */)
+                 .collect(Collectors.toList());
+     }
+```
+
+Lines 95–104 (getMyRequests) — scope to tenant:
+```diff
+     public List<ReliefRequest> getMyRequests(User currentUser) {
+-        return requestRepository.findAll().stream()
+-                .filter(r -> currentUser.getId().equals(r.getCreatorId()))
++        String tenantId = TenantContext.getTenantId();
++        return requestRepository.findByTenantIdAndCreatorId(tenantId, currentUser.getId()).stream()
+                 .sorted(/* existing sort */)
+                 .collect(Collectors.toList());
+     }
+```
+
+Add import: `import com.aura.security.TenantContext;`
+
+---
+
+#### [MODIFY] [InventoryService.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/service/InventoryService.java)
+
+Lines 28–30 (getAll) — scope to tenant:
+```diff
+     public List<InventoryItem> getAll() {
+-        return inventoryRepository.findAll();
++        return inventoryRepository.findByTenantId(TenantContext.getTenantId());
+     }
+```
+
+Lines 33–35 (addItem) — set tenantId:
+```diff
+     public InventoryItem addItem(InventoryItem item) {
++        item.setTenantId(TenantContext.getTenantId());
+         return inventoryRepository.save(item);
+     }
+```
+
+Lines 89–99 (bookItem) — set tenantId on booking:
+```diff
+         Booking booking = Booking.builder()
++                .tenantId(TenantContext.getTenantId())
+                 .type("inventory_booking")
+                 // ... rest unchanged
+```
+
+Add import: `import com.aura.security.TenantContext;`
+
+---
+
+#### [MODIFY] [PublicService.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/service/PublicService.java)
+
+Lines 38–40 (getBoard) — scope to tenant:
+```diff
+     public List<ReliefRequest> getBoard() {
+-        return requestRepository.findByIsPublicTrueOrderByCreatedAtDesc();
++        String tenantId = TenantContext.getTenantId();
++        return requestRepository.findByTenantIdAndIsPublicTrueAndStatusNotOrderByCreatedAtDesc(tenantId, "completed");
+     }
+```
+
+Lines 45–63 (getStats) — scope to tenant:
+```diff
+     public PublicStatsDto getStats() {
+-        long totalReq = requestRepository.count();
+-        long totalDonors = userRepository.countByRole("donor");
+-        long completedReq = requestRepository.countByStatus("completed");
++        String tenantId = TenantContext.getTenantId();
++        long totalReq = requestRepository.countByTenantId(tenantId);
++        long totalDonors = userRepository.countByTenantIdAndRole(tenantId, "donor");
++        long completedReq = requestRepository.countByTenantIdAndStatus(tenantId, "completed");
+```
+
+Lines 69–87 (bookRequest) — set tenantId on booking:
+```diff
+         Booking booking = Booking.builder()
++                .tenantId(TenantContext.getTenantId())
+                 .requestId(dto.getRequestId())
+                 .notes(dto.getNotes())
+                 .donorId(currentUser.getId())
++                .donorName(currentUser.getFullName())
++                .donorPhone(currentUser.getPhoneNumber())
++                .donatedQuantity(dto.getDonatedQuantity() != null ? dto.getDonatedQuantity() : 1)
++                .confirmationStatus("pending")
+                 .bookedAt(Instant.now())
+                 .build();
+
+-        // Update request status to "ongoing"
+-        request.setStatus("ongoing");
+-        requestRepository.save(request);
++        // Do NOT set status to "ongoing" — request stays visible for partial donations
++        // Status only changes when Super Admin confirms
+
+         return savedBooking;
+```
+
+Lines 92–116 (getMyContributions) — scope to tenant:
+```diff
+     public List<ContributionDto> getMyContributions(User currentUser) {
+-        List<Booking> bookings = bookingRepository.findByDonorIdOrderByBookedAtDesc(currentUser.getId());
++        String tenantId = TenantContext.getTenantId();
++        List<Booking> bookings = bookingRepository.findByTenantIdAndDonorIdOrderByBookedAtDesc(tenantId, currentUser.getId());
+```
+
+Add import: `import com.aura.security.TenantContext;`
+
+---
+
+#### [MODIFY] [AnalysisService.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/service/AnalysisService.java)
+
+Line 88 (analyzeRequestSync) — set tenantId on analysis:
+```diff
+         Optional<PrologAnalysis> existing = analysisRepository.findByRequestId(requestId);
+         PrologAnalysis analysis = existing.orElse(PrologAnalysis.builder().requestId(requestId).build());
++        analysis.setTenantId(request.getTenantId()); // Inherit tenant from the request
+         analysis.setPriorityLevel(priorityLabel);
+```
+
+---
+
+#### [MODIFY] [AuthService.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/service/AuthService.java)
+
+Complete rewrite of the `register()` method:
+
+```diff
+-    public UserResponseDto register(RegisterRequest request) {
++    public UserResponseDto register(RegisterRequest request, List<MultipartFile> documents) {
+         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Email already registered");
+         }
+
++        String role = request.getRole().toLowerCase();
++
++        // Validate role — remove super_admin from public registration
++        if ("platform_owner".equals(role)) {
++            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Platform owner cannot be registered publicly");
++        }
++
++        // Generate tenantId for super_admin, otherwise leave null (set on approval)
++        String tenantId = null;
++        boolean autoActive = false;
++        String autoApproval = "pending";
++
++        if ("super_admin".equals(role)) {
++            tenantId = TenantIdGenerator.generate();
++            // Super Admin starts as pending — Platform Owner must approve
++        } else {
++            // GN Officer / Donor — tenantId comes from the X-Tenant-ID header
++            tenantId = TenantContext.getTenantId();
++        }
+
+         User user = User.builder()
++                .tenantId(tenantId)
+                 .email(request.getEmail())
+                 .password(passwordEncoder.encode(request.getPassword()))
+                 .fullName(request.getFullName())
+-                .role(request.getRole().toLowerCase())
+-                .isActive(true)
++                .role(role)
++                .phoneNumber(request.getPhoneNumber())
++                .address(request.getAddress())
++                .organizationName(request.getOrganizationName())
++                .isActive(false)
++                .approvalStatus("pending")
++                .registeredAt(Instant.now())
+                 .build();
+
+         User savedUser = userRepository.save(user);
+
++        // Upload documents to R2 if provided
++        if (documents != null && !documents.isEmpty()) {
++            List<String> docKeys = new ArrayList<>();
++            for (MultipartFile doc : documents) {
++                String key = cloudflareR2Service.uploadDocument(
++                    savedUser.getTenantId() != null ? savedUser.getTenantId() : "unassigned",
++                    savedUser.getId(), doc);
++                docKeys.add(key);
++            }
++            savedUser.setDocuments(docKeys);
++            userRepository.save(savedUser);
++        }
++
+         return UserResponseDto.builder()
+                 .id(savedUser.getId())
++                .tenantId(savedUser.getTenantId())
+                 .email(savedUser.getEmail())
+                 .fullName(savedUser.getFullName())
+                 .role(savedUser.getRole())
+                 .isActive(savedUser.isActive())
++                .approvalStatus(savedUser.getApprovalStatus())
++                .registeredAt(savedUser.getRegisteredAt())
+                 .build();
+     }
+```
+
+Update `login()` method — add approval status checks:
+```diff
+     public LoginResponseDto login(LoginRequest request) {
+         User user = userRepository.findByEmail(request.getEmail())
+                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
+
+         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
+         }
+
++        // Check approval status
++        if ("pending".equals(user.getApprovalStatus())) {
++            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
++                "Your account is pending approval. Please wait for admin verification.");
++        }
++        if ("rejected".equals(user.getApprovalStatus())) {
++            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
++                "Your registration has been rejected. Reason: " +
++                (user.getRejectionReason() != null ? user.getRejectionReason() : "No reason provided"));
++        }
+
+         if (!user.isActive()) {
+             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Account deactivated");
+         }
+
+-        String token = jwtUtil.generateToken(user.getId(), user.getRole());
++        String token = jwtUtil.generateToken(user.getId(), user.getRole(), user.getTenantId());
+
+         return LoginResponseDto.builder()
+                 .accessToken(token)
+                 .tokenType("bearer")
+                 .user(LoginResponseDto.UserDetailsDto.builder()
+                         .id(user.getId())
+                         .email(user.getEmail())
+                         .fullName(user.getFullName())
+                         .role(user.getRole())
++                        .tenantId(user.getTenantId())
+                         .build())
+                 .build();
+     }
+```
+
+Add new autowired field:
+```diff
++    @Autowired
++    private CloudflareR2Service cloudflareR2Service;
+```
+
+Add imports: `import com.aura.security.TenantContext;`, `import com.aura.util.TenantIdGenerator;`, `import org.springframework.web.multipart.MultipartFile;`, `import java.time.Instant;`, `import java.util.ArrayList;`, `import java.util.List;`
+
+---
+
+## 4. Phase 1: Secure Registration with Admin Approval
+
+### 4.1 DTO Changes
+
+---
+
+#### [MODIFY] [RegisterRequest.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/dto/RegisterRequest.java)
+
+```diff
+ @Data
+ public class RegisterRequest {
+     @NotBlank(message = "Email is required")
+     @Email(message = "Invalid email format")
+     private String email;
+
+     @NotBlank(message = "Password is required")
+     @Size(min = 6, message = "Password must be at least 6 characters")
+     private String password;
+
+     @NotBlank(message = "Full name is required")
+     private String fullName;
+
++    @NotBlank(message = "Phone number is required")
++    private String phoneNumber;
++
++    @NotBlank(message = "Address is required")
++    private String address;
++
++    private String organizationName; // Only for super_admin
++
+     private String role = "donor";
+ }
+```
+
+---
+
+#### [MODIFY] [UserResponseDto.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/dto/UserResponseDto.java)
+
+```diff
+ @Data @NoArgsConstructor @AllArgsConstructor @Builder
+ public class UserResponseDto {
+     private String id;
++    private String tenantId;
+     private String email;
+     private String fullName;
+     private String role;
+
+     @JsonProperty("is_active")
+     private boolean isActive;
++
++    private String phoneNumber;
++    private String address;
++    private String organizationName;
++    private List<String> documents;
++    private String approvalStatus;
++    private String rejectionReason;
++    private String approvedBy;
++    private Instant approvedAt;
++    private Instant registeredAt;
+ }
+```
+
+Add imports: `import java.time.Instant; import java.util.List;`
+
+---
+
+#### [MODIFY] [LoginResponseDto.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/dto/LoginResponseDto.java)
+
+Add `tenantId` to the inner `UserDetailsDto`:
+```diff
+     public static class UserDetailsDto {
+         private String id;
+         private String email;
+         @JsonProperty("full_name")
+         private String fullName;
+         private String role;
++        @JsonProperty("tenant_id")
++        private String tenantId;
+     }
+```
+
+---
+
+#### [MODIFY] [BookingCreateDto.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/dto/BookingCreateDto.java)
+
+```diff
+ @Data
+ public class BookingCreateDto {
+     @JsonProperty("request_id")
+     private String requestId;
+     private String notes;
++    @JsonProperty("donated_quantity")
++    private Integer donatedQuantity;
+ }
+```
+
+---
+
+#### [NEW] [ApprovalActionDto.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/dto/ApprovalActionDto.java)
+
+```java
+package com.aura.dto;
+
+import lombok.Data;
+
+@Data
+public class ApprovalActionDto {
+    private String reason; // Required for rejection, optional for approval
+}
+```
+
+---
+
+### 4.2 New Controllers & Services
+
+---
+
+#### [NEW] [AdminUserController.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/controller/AdminUserController.java)
+
+All endpoints automatically scoped to the authenticated Super Admin's tenant:
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/admin/users` | List all users in this tenant |
+| `GET` | `/api/admin/users/pending` | Pending approval users |
+| `GET` | `/api/admin/users/{id}` | User details with document preview URLs |
+| `POST` | `/api/admin/users/{id}/approve` | Approve user (sets tenantId + isActive) |
+| `POST` | `/api/admin/users/{id}/reject` | Reject user with reason |
+| `PATCH` | `/api/admin/users/{id}/deactivate` | Deactivate an existing user |
+
+---
+
+#### [NEW] [AdminUserService.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/service/AdminUserService.java)
+
+Key method — `approveUser()`:
+```java
+public UserResponseDto approveUser(String userId, String adminId) {
+    String tenantId = TenantContext.getTenantId();
+    User user = userRepository.findById(userId)
+        .orElseThrow(() -> new ResponseStatusException(NOT_FOUND, "User not found"));
+
+    user.setTenantId(tenantId);  // Assign the admin's tenantId
+    user.setIsActive(true);
+    user.setApprovalStatus("approved");
+    user.setApprovedBy(adminId);
+    user.setApprovedAt(Instant.now());
+
+    return toDto(userRepository.save(user));
+}
+```
+
+Key method — `getUserWithDocUrls()` (for document preview):
+```java
+public UserResponseDto getUserWithDocUrls(String userId) {
+    User user = userRepository.findById(userId).orElseThrow(...);
+    UserResponseDto dto = toDto(user);
+
+    // Generate pre-signed URLs for each document
+    List<String> preSignedUrls = user.getDocuments().stream()
+        .map(key -> cloudflareR2Service.generatePreSignedUrl(key))
+        .collect(Collectors.toList());
+    dto.setDocuments(preSignedUrls); // Replace R2 keys with temporary URLs
+
+    return dto;
+}
+```
+
+---
+
+#### [NEW] [AdminDonationController.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/controller/AdminDonationController.java)
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/admin/donations` | All donations for this tenant |
+| `GET` | `/api/admin/donations/pending` | Pending confirmation donations |
+| `POST` | `/api/admin/donations/{id}/confirm` | Confirm a donation |
+| `POST` | `/api/admin/donations/{id}/reject` | Reject a donation |
+
+---
+
+#### [NEW] [AdminDonationService.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/service/AdminDonationService.java)
+
+Key logic — `confirmDonation()`:
+```java
+public Booking confirmDonation(String bookingId, String adminId) {
+    String tenantId = TenantContext.getTenantId();
+    Booking booking = bookingRepository.findById(bookingId).orElseThrow(...);
+
+    // Verify same tenant
+    if (!tenantId.equals(booking.getTenantId())) {
+        throw new ResponseStatusException(FORBIDDEN, "Cross-tenant access denied");
+    }
+
+    booking.setConfirmationStatus("confirmed");
+    booking.setConfirmedBy(adminId);
+    booking.setConfirmedAt(Instant.now());
+    bookingRepository.save(booking);
+
+    // Recalculate total donated on the request
+    // (Sum of all confirmed donations for this request)
+    // If total >= needed → auto-update request status to "completed" (or leave for admin)
+    // Per user's requirement: DO NOT auto-complete. Admin confirms manually.
+
+    return booking;
+}
+```
+
+---
+
+## 5. Phase 2: Cloudflare R2 Document Storage
+
+### 5.1 Maven Dependency
+
+#### [MODIFY] [pom.xml](file:///d:/Projects/Project%20AURA/final-project/backend/pom.xml)
+
+Add inside `<dependencies>`:
+```xml
+        <!-- AWS SDK for S3-Compatible Cloudflare R2 -->
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+            <version>2.25.15</version>
+        </dependency>
+```
+
+---
+
+### 5.2 Configuration
+
+#### [MODIFY] [application.properties](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/resources/application.properties)
+
+Add at the bottom:
+```properties
+# Cloudflare R2 Configuration
+r2.endpoint=${R2_ENDPOINT:https://your-account-id.r2.cloudflarestorage.com}
+r2.access-key=${R2_ACCESS_KEY:your-access-key}
+r2.secret-key=${R2_SECRET_KEY:your-secret-key}
+r2.bucket-name=${R2_BUCKET_NAME:aura-documents}
+
+# File upload limits
+spring.servlet.multipart.max-file-size=5MB
+spring.servlet.multipart.max-request-size=15MB
+```
+
+---
+
+#### [NEW] [R2Config.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/config/R2Config.java)
+
+```java
+package com.aura.config;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+
+import java.net.URI;
+
+@Configuration
+public class R2Config {
+    @Value("${r2.endpoint}")
+    private String endpoint;
+
+    @Value("${r2.access-key}")
+    private String accessKey;
+
+    @Value("${r2.secret-key}")
+    private String secretKey;
+
+    @Bean
+    public S3Client s3Client() {
+        return S3Client.builder()
+                .endpointOverride(URI.create(endpoint))
+                .credentialsProvider(StaticCredentialsProvider.create(
+                        AwsBasicCredentials.create(accessKey, secretKey)))
+                .region(Region.US_EAST_1)
+                .forcePathStyle(true)
+                .build();
+    }
+
+    @Bean
+    public S3Presigner s3Presigner() {
+        return S3Presigner.builder()
+                .endpointOverride(URI.create(endpoint))
+                .credentialsProvider(StaticCredentialsProvider.create(
+                        AwsBasicCredentials.create(accessKey, secretKey)))
+                .region(Region.US_EAST_1)
+                .build();
+    }
+}
+```
+
+---
+
+#### [NEW] [CloudflareR2Service.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/service/CloudflareR2Service.java)
+
+```java
+package com.aura.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.presigner.S3Presigner;
+import software.amazon.awssdk.services.s3.presigner.model.GetObjectPresignRequest;
+
+import java.io.IOException;
+import java.time.Duration;
+import java.util.Set;
+import java.util.UUID;
+
+@Service
+public class CloudflareR2Service {
+
+    private static final Set<String> ALLOWED_TYPES = Set.of(
+        "image/jpeg", "image/png", "application/pdf"
+    );
+    private static final long MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+    @Autowired
+    private S3Client s3Client;
+
+    @Autowired
+    private S3Presigner s3Presigner;
+
+    @Value("${r2.bucket-name}")
+    private String bucketName;
+
+    /**
+     * Uploads a document to R2. Returns the R2 object key.
+     * File is stored at: documents/{tenantId}/{userId}/{uuid}-{filename}
+     */
+    public String uploadDocument(String tenantId, String userId, MultipartFile file) {
+        // Validate file type
+        String contentType = file.getContentType();
+        if (contentType == null || !ALLOWED_TYPES.contains(contentType)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "Invalid file type. Only JPEG, PNG, and PDF are allowed.");
+        }
+
+        // Validate file size
+        if (file.getSize() > MAX_FILE_SIZE) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                "File too large. Maximum size is 5MB.");
+        }
+
+        String filename = StringUtils.cleanPath(file.getOriginalFilename());
+        String key = String.format("documents/%s/%s/%s-%s",
+            tenantId, userId, UUID.randomUUID().toString().substring(0, 8), filename);
+
+        try {
+            PutObjectRequest putReq = PutObjectRequest.builder()
+                .bucket(bucketName)
+                .key(key)
+                .contentType(contentType)
+                .build();
+
+            s3Client.putObject(putReq,
+                RequestBody.fromInputStream(file.getInputStream(), file.getSize()));
+
+            return key;
+        } catch (IOException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                "Failed to upload document: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Generates a pre-signed GET URL for viewing a document.
+     * URL is valid for 10 minutes.
+     */
+    public String generatePreSignedUrl(String key) {
+        GetObjectRequest getReq = GetObjectRequest.builder()
+            .bucket(bucketName)
+            .key(key)
+            .build();
+
+        GetObjectPresignRequest presignReq = GetObjectPresignRequest.builder()
+            .signatureDuration(Duration.ofMinutes(10))
+            .getObjectRequest(getReq)
+            .build();
+
+        return s3Presigner.presignGetObject(presignReq).url().toString();
+    }
+}
+```
+
+---
+
+## 6. Phase 3: Platform Owner Dashboard
+
+---
+
+#### [NEW] [PlatformController.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/controller/PlatformController.java)
+
+| Method | Endpoint | Access | Description |
+|--------|----------|--------|-------------|
+| `GET` | `/api/platform/tenants` | Platform Owner | List all registered organizations |
+| `POST` | `/api/platform/tenants/{userId}/approve` | Platform Owner | Activate an organization |
+| `POST` | `/api/platform/tenants/{userId}/deactivate` | Platform Owner | Deactivate an organization |
+
+> [!IMPORTANT]
+> This controller has **NO** endpoint for viewing documents. The Platform Owner cannot access tenant users' verification documents.
+
+---
+
+#### [NEW] [PlatformService.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/service/PlatformService.java)
+
+```java
+public List<UserResponseDto> getAllOrganizations() {
+    return userRepository.findByRole("super_admin").stream()
+        .map(this::toDto)
+        .collect(Collectors.toList());
+}
+
+public UserResponseDto approveOrganization(String userId) {
+    User user = userRepository.findById(userId).orElseThrow(...);
+    if (!"super_admin".equals(user.getRole())) {
+        throw new ResponseStatusException(BAD_REQUEST, "User is not an organization admin");
+    }
+    user.setIsActive(true);
+    user.setApprovalStatus("approved");
+    user.setApprovedAt(Instant.now());
+    return toDto(userRepository.save(user));
+}
+```
+
+---
+
+#### [MODIFY] [SecurityConfig.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/config/SecurityConfig.java)
+
+```diff
+             .authorizeHttpRequests(auth -> auth
+                 .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
+                 .requestMatchers("/api/public/**").permitAll()
++                .requestMatchers("/api/platform/**").hasRole("PLATFORM_OWNER")
++                .requestMatchers("/api/admin/**").hasRole("SUPER_ADMIN")
+                 .requestMatchers("/").permitAll()
+                 .anyRequest().authenticated()
+             )
+```
+
+Also update CORS to accept `X-Tenant-ID` header:
+```diff
+         configuration.setAllowedHeaders(Arrays.asList(
+             "Authorization", "Content-Type", "X-Requested-With",
+-            "accept", "Origin", "Access-Control-Request-Method", "Access-Control-Request-Headers"));
++            "accept", "Origin", "Access-Control-Request-Method",
++            "Access-Control-Request-Headers", "X-Tenant-ID"));
+```
+
+---
+
+#### [MODIFY] [AuthController.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/controller/AuthController.java)
+
+Change `/register` to accept multipart:
+```diff
+-    @PostMapping("/register")
+-    public UserResponseDto register(@Valid @RequestBody RegisterRequest request) {
+-        return authService.register(request);
++    @PostMapping(value = "/register", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
++    public UserResponseDto register(
++            @Valid @ModelAttribute RegisterRequest request,
++            @RequestParam(value = "documents", required = false) List<MultipartFile> documents) {
++        return authService.register(request, documents);
+     }
+```
+
+Update `/me` to include new fields:
+```diff
+     @GetMapping("/me")
+     public UserResponseDto getMe(@AuthenticationPrincipal User currentUser) {
+         return UserResponseDto.builder()
+                 .id(currentUser.getId())
++                .tenantId(currentUser.getTenantId())
+                 .email(currentUser.getEmail())
+                 .fullName(currentUser.getFullName())
+                 .role(currentUser.getRole())
+                 .isActive(currentUser.isActive())
++                .approvalStatus(currentUser.getApprovalStatus())
+                 .build();
+     }
+```
+
+Add imports: `import org.springframework.web.multipart.MultipartFile; import java.util.List;`
+
+---
+
+## 7. Phase 4: Enhanced Booking & Partial Donations
+
+(All changes from the [original plan Phases 2-4](file:///d:/Projects/Project%20AURA/final-project/docs/implementation%20plan%20for%20new%20auth.md) are preserved and integrated with tenant scoping above.)
+
+---
+
+## 8. Phase 5: Frontend Changes
+
+### 8.1 API Layer
+
+#### [MODIFY] [api/index.js](file:///d:/Projects/Project%20AURA/final-project/frontend/src/api/index.js)
+
+Add `X-Tenant-ID` header to all requests:
+```diff
++const TENANT_ID = import.meta.env.VITE_TENANT_ID || ''
++
+ async function apiFetch(endpoint, options = {}) {
+   const token = localStorage.getItem('aura_token')
+   const headers = {
+     'Content-Type': 'application/json',
+     ...(token ? { Authorization: `Bearer ${token}` } : {}),
++    ...(TENANT_ID ? { 'X-Tenant-ID': TENANT_ID } : {}),
+     ...options.headers,
+   }
+```
+
+Change `registerUser` to use `FormData`:
+```diff
+-export const registerUser = (data) =>
+-  apiFetch('/api/auth/register', { method: 'POST', body: JSON.stringify(data) })
++export const registerUser = (formData) => {
++  const token = localStorage.getItem('aura_token')
++  const headers = {}
++  if (token) headers['Authorization'] = `Bearer ${token}`
++  if (TENANT_ID) headers['X-Tenant-ID'] = TENANT_ID
++  // Do NOT set Content-Type — browser sets it automatically with boundary for FormData
++  return fetch(`${BASE_URL}/api/auth/register`, {
++    method: 'POST',
++    headers,
++    body: formData,
++  }).then(res => {
++    if (!res.ok) return res.json().then(d => { throw new Error(d.detail || 'Registration failed') })
++    return res.json()
++  })
++}
+```
+
+Add new admin API functions:
+```javascript
+// Admin User Management
+export const getAdminUsers = (filters = {}) =>
+  apiFetch(`/api/admin/users?${new URLSearchParams(filters)}`)
+export const getPendingUsers = () => apiFetch('/api/admin/users/pending')
+export const getUserDetails = (id) => apiFetch(`/api/admin/users/${id}`)
+export const approveUser = (id) =>
+  apiFetch(`/api/admin/users/${id}/approve`, { method: 'POST' })
+export const rejectUser = (id, reason) =>
+  apiFetch(`/api/admin/users/${id}/reject`, {
+    method: 'POST', body: JSON.stringify({ reason })
+  })
+
+// Admin Donation Management
+export const getPendingDonations = () => apiFetch('/api/admin/donations/pending')
+export const confirmDonation = (id) =>
+  apiFetch(`/api/admin/donations/${id}/confirm`, { method: 'POST' })
+export const rejectDonation = (id, reason) =>
+  apiFetch(`/api/admin/donations/${id}/reject`, {
+    method: 'POST', body: JSON.stringify({ reason })
+  })
+
+// Platform Owner (only used on platform owner frontend)
+export const getPlatformTenants = () => apiFetch('/api/platform/tenants')
+export const approveTenant = (userId) =>
+  apiFetch(`/api/platform/tenants/${userId}/approve`, { method: 'POST' })
+```
+
+---
+
+### 8.2 Constants
+
+#### [MODIFY] [constants/index.js](file:///d:/Projects/Project%20AURA/final-project/frontend/src/constants/index.js)
+
+```diff
+ export const ROLES = {
+   GN_OFFICER: 'gn_officer',
+   DONOR: 'donor',
+   SUPER_ADMIN: 'super_admin',
++  PLATFORM_OWNER: 'platform_owner',
+ };
+```
+
+---
+
+### 8.3 AuthContext
+
+#### [MODIFY] [AuthContext.jsx](file:///d:/Projects/Project%20AURA/final-project/frontend/src/context/AuthContext.jsx)
+
+Store `tenant_id` from login response:
+```diff
+   const user = {
+     id:        rawUser.id       || rawUser._id,
+     email:     rawUser.email,
+     full_name: rawUser.full_name,
+     role:      rawUser.role,
++    tenant_id: rawUser.tenant_id,
+     is_active: rawUser.is_active !== false,
+   }
+```
+
+---
+
+### 8.4 New & Modified Pages
+
+#### [MODIFY] [LoginPage.jsx](file:///d:/Projects/Project%20AURA/final-project/frontend/src/pages/LoginPage.jsx)
+- Remove `Super Admin` from role selector
+- Add phone, address, document upload fields
+- Use `FormData` for registration
+- Show "Pending approval" success message
+
+#### [MODIFY] [AdminUsersPage.jsx](file:///d:/Projects/Project%20AURA/final-project/frontend/src/pages/AdminUsersPage.jsx)
+- Fetch real data from `/api/admin/users`
+- Add Pending/Approved/Rejected tabs
+- Document preview (loads pre-signed URLs)
+- Approve/Reject buttons
+
+#### [NEW] [AdminDonationsPage.jsx](file:///d:/Projects/Project%20AURA/final-project/frontend/src/pages/AdminDonationsPage.jsx)
+- Pending donations tab with Confirm/Reject
+- Confirmed donations history tab
+
+#### [MODIFY] [App.jsx](file:///d:/Projects/Project%20AURA/final-project/frontend/src/App.jsx)
+- Add `/donations` route for Super Admin
+- Add `/platform-owner` route for Platform Owner
+
+---
+
+## 9. Phase 6: Data Migration & MongoDB Atlas
+
+### 9.1 MongoDB Atlas Setup (Step-by-Step)
+
+**Step 1: Create Atlas Account & Project**
+1. Go to [mongodb.com/cloud/atlas](https://www.mongodb.com/cloud/atlas) and sign up
+2. Click **New Project** → name it `AURA Platform`
+
+**Step 2: Deploy a Cluster**
+1. Click **Build a Database**
+2. Choose **M0 Free** tier for development (M10+ for production)
+3. Select cloud provider (AWS recommended) and region closest to your server
+4. Name the cluster (e.g., `aura-cluster-0`)
+5. Click **Create Deployment**
+
+**Step 3: Configure Database Access**
+1. Go to **Database Access** in left sidebar
+2. Click **Add New Database User**
+3. Authentication: **Password**
+4. Username: `aura-app-user`
+5. Password: Generate a strong password and **save it securely**
+6. Database User Privileges: **Read and Write to any database**
+7. Click **Add User**
+
+**Step 4: Configure Network Access**
+1. Go to **Network Access** in left sidebar
+2. Click **Add IP Address**
+3. For development: Add your current IP, or `0.0.0.0/0` (allow all — temporary)
+4. For production: Add only your backend server's public IP
+5. Click **Confirm**
+
+**Step 5: Get Connection String**
+1. Go to **Database** → Click **Connect** on your cluster
+2. Choose **Drivers** → Select **Java** and version **5.1 or later**
+3. Copy the connection string:
+   ```
+   mongodb+srv://aura-app-user:<password>@aura-cluster-0.xxxxx.mongodb.net/?retryWrites=true&w=majority&appName=aura-cluster-0
+   ```
+4. Replace `<password>` with your actual password
+5. Add `/aura_db` before the `?` to specify the database:
+   ```
+   mongodb+srv://aura-app-user:YOUR_PASS@aura-cluster-0.xxxxx.mongodb.net/aura_db?retryWrites=true&w=majority
+   ```
+
+**Step 6: Update application.properties**
+```diff
+-spring.mongodb.uri=mongodb://${MONGODB_HOST:localhost}:${MONGODB_PORT:27017}/aura_db
++spring.data.mongodb.uri=${MONGODB_URI:mongodb://localhost:27017/aura_db}
+```
+
+For production, set environment variable:
+```bash
+export MONGODB_URI="mongodb+srv://aura-app-user:YOUR_PASS@aura-cluster-0.xxxxx.mongodb.net/aura_db?retryWrites=true&w=majority"
+```
+
+**Step 7: Create Indexes**
+Using MongoDB Atlas Data Explorer or Compass:
+```javascript
+db.users.createIndex({ "tenant_id": 1 });
+db.users.createIndex({ "email": 1 }, { unique: true });
+db.requests.createIndex({ "tenant_id": 1 });
+db.requests.createIndex({ "tenant_id": 1, "is_public": 1, "status": 1 });
+db.donor_bookings.createIndex({ "tenant_id": 1 });
+db.donor_bookings.createIndex({ "tenant_id": 1, "confirmation_status": 1 });
+db.inventory.createIndex({ "tenant_id": 1 });
+db.prolog_analysis.createIndex({ "tenant_id": 1 });
+db.prolog_analysis.createIndex({ "request_id": 1 }, { unique: true });
+```
+
+### 9.2 Data Migration Service
+
+#### [NEW] [DataMigrationService.java](file:///d:/Projects/Project%20AURA/final-project/backend/src/main/java/com/aura/service/DataMigrationService.java)
+
+One-time migration for existing data without tenant IDs:
+
+```java
+@Service
+public class DataMigrationService {
+    @Autowired private MongoTemplate mongoTemplate;
+    private static final Logger log = LoggerFactory.getLogger(DataMigrationService.class);
+
+    @PostConstruct
+    public void migrateExistingData() {
+        String defaultTenant = "TEN-DEFAULT0";
+
+        // Count documents without tenant_id
+        long usersWithout = mongoTemplate.count(
+            Query.query(Criteria.where("tenant_id").exists(false)), "users");
+
+        if (usersWithout == 0) {
+            log.info("[Migration] No migration needed — all documents have tenant_id");
+            return;
+        }
+
+        log.info("[Migration] Found {} users without tenant_id. Assigning '{}'",
+            usersWithout, defaultTenant);
+
+        // Assign default tenant to all collections
+        for (String collection : List.of("users", "requests", "donor_bookings", "inventory", "prolog_analysis")) {
+            mongoTemplate.updateMulti(
+                Query.query(Criteria.where("tenant_id").exists(false)),
+                Update.update("tenant_id", defaultTenant),
+                collection
+            );
+        }
+
+        log.info("[Migration] Migration complete.");
+    }
+}
+```
+
+---
+
+## 10. Complete File Change Registry
+
+### Backend — 40 files total (16 new, 24 modified)
+
+| Type | File Path | Summary |
+|------|-----------|---------|
+| NEW | `util/TenantIdGenerator.java` | Generates `TEN-XXXXXXXX` IDs |
+| NEW | `security/TenantContext.java` | Thread-local tenant holder |
+| NEW | `security/TenantFilter.java` | Reads `X-Tenant-ID` header for public requests |
+| NEW | `config/R2Config.java` | S3Client + S3Presigner beans for R2 |
+| NEW | `service/CloudflareR2Service.java` | Upload, validate, pre-sign documents |
+| NEW | `service/AdminUserService.java` | Approve/reject users (tenant-scoped) |
+| NEW | `service/AdminDonationService.java` | Confirm/reject donations (tenant-scoped) |
+| NEW | `service/PlatformService.java` | List/approve organizations |
+| NEW | `service/DataMigrationService.java` | One-time tenant migration |
+| NEW | `controller/AdminUserController.java` | Admin user management endpoints |
+| NEW | `controller/AdminDonationController.java` | Admin donation endpoints |
+| NEW | `controller/PlatformController.java` | Platform Owner endpoints |
+| NEW | `dto/ApprovalActionDto.java` | Approve/reject action body |
+| MODIFY | `schema/User.java` | +tenantId, +phone, +address, +docs, +approval fields |
+| MODIFY | `schema/ReliefRequest.java` | +tenantId, +totalDonated |
+| MODIFY | `schema/Booking.java` | +tenantId, +donatedQty, +confirmationStatus, +donorInfo |
+| MODIFY | `schema/InventoryItem.java` | +tenantId |
+| MODIFY | `schema/PrologAnalysis.java` | +tenantId |
+| MODIFY | `schema/RequestItem.java` | +donatedQuantity |
+| MODIFY | `repository/UserRepository.java` | +tenant-scoped queries |
+| MODIFY | `repository/RequestRepository.java` | +tenant-scoped queries |
+| MODIFY | `repository/BookingRepository.java` | +tenant-scoped queries |
+| MODIFY | `repository/InventoryRepository.java` | +tenant-scoped queries |
+| MODIFY | `repository/AnalysisRepository.java` | +tenant-scoped query |
+| MODIFY | `security/JwtUtil.java` | +tenantId in JWT claims |
+| MODIFY | `security/JwtAuthFilter.java` | +TenantContext.setTenantId() |
+| MODIFY | `service/AuthService.java` | Tenant generation, approval gating, R2 upload |
+| MODIFY | `service/RequestService.java` | Tenant-scoped queries |
+| MODIFY | `service/InventoryService.java` | Tenant-scoped queries |
+| MODIFY | `service/PublicService.java` | Tenant-scoped board + partial donations |
+| MODIFY | `service/AnalysisService.java` | Set tenantId on analysis |
+| MODIFY | `controller/AuthController.java` | Multipart register + /me fields |
+| MODIFY | `config/SecurityConfig.java` | +admin/platform endpoints + CORS header |
+| MODIFY | `dto/RegisterRequest.java` | +phone, +address, +organizationName |
+| MODIFY | `dto/UserResponseDto.java` | +all new user fields |
+| MODIFY | `dto/LoginResponseDto.java` | +tenantId in UserDetailsDto |
+| MODIFY | `dto/BookingCreateDto.java` | +donatedQuantity |
+| MODIFY | `pom.xml` | +AWS SDK S3 dependency |
+| MODIFY | `application.properties` | +R2 config, +file upload limits, +MongoDB Atlas URI |
+
+### Frontend — 8 files modified, 1 new
+
+| Type | File Path | Summary |
+|------|-----------|---------|
+| MODIFY | `api/index.js` | +X-Tenant-ID header, +FormData register, +admin APIs |
+| MODIFY | `constants/index.js` | +PLATFORM_OWNER role |
+| MODIFY | `context/AuthContext.jsx` | +tenant_id in user state |
+| MODIFY | `pages/LoginPage.jsx` | New registration form fields |
+| MODIFY | `pages/AdminUsersPage.jsx` | Real API data + approve/reject |
+| MODIFY | `pages/App.jsx` | +/donations route, +/platform-owner route |
+| MODIFY | `pages/DonorReliefBoard.jsx` | Enhanced booking modal |
+| MODIFY | `pages/DonorContributionsPage.jsx` | +donatedQuantity, +confirmationStatus |
+| NEW | `pages/AdminDonationsPage.jsx` | Donation management page |
+
+---
+
+## 11. Verification Plan
+
+### 11.1 Automated Tests
+```bash
+cd backend
+./mvnw test
+```
+
+New test classes to add:
+- `TenantIdGeneratorTest` — format validation and uniqueness
+- `CloudflareR2ServiceTest` — mock S3 client, test upload validation
+- `TenantFilterTest` — verify header extraction
+- `AdminUserServiceTest` — approve/reject with tenant assignment
+- `PlatformServiceTest` — organization approval
+
+### 11.2 Manual Test Scenarios
+
+**Scenario 1 — Multi-Tenant Data Isolation:**
+1. Register Organization A → Get `TEN-AAAAAAAA`
+2. Platform Owner approves Organization A
+3. Login as Org A Super Admin → Create 3 requests, add inventory
+4. Register Organization B → Get `TEN-BBBBBBBB`
+5. Platform Owner approves Organization B
+6. Login as Org B Super Admin → Verify: sees ZERO requests, ZERO inventory
+7. Create requests under Org B → Verify Org A cannot see them
+
+**Scenario 2 — Document Upload & Privacy:**
+1. Register a Donor under Org A with NIC upload
+2. Verify file exists in R2 at `documents/TEN-AAAAAAAA/{userId}/...`
+3. Org A Super Admin clicks "View Documents" → pre-signed URL works
+4. Wait 11 minutes → same URL returns 403
+5. Platform Owner dashboard → verify NO document viewing UI exists
+
+**Scenario 3 — Donation Confirmation Flow:**
+1. Donor books a request (qty: 50)
+2. Booking status = "pending" in database
+3. Donor contacts requester, delivers goods
+4. Requester/Donor contacts Super Admin to confirm receipt
+5. Super Admin confirms donation → status = "confirmed"
+6. Verify request's total_donated is updated
+
+---
+
+## 12. Senior Developer Analysis & Recommendations
+
+### My Professional Assessment
+
+#### Architecture Strengths
+1. **Thread-local tenant isolation** is a battle-tested pattern used by enterprise SaaS platforms (Salesforce, HubSpot). It's lightweight, doesn't require query interceptors or custom MongoDB plugins, and works seamlessly with Spring Data repositories.
+
+2. **Backend-managed R2 uploads** is the correct choice. Never let frontends talk directly to storage buckets — it exposes credentials, bypasses validation, and creates security holes.
+
+3. **Pre-signed URLs for document viewing** is industry standard (AWS S3, GCP Cloud Storage all use this). 10-minute expiry is a good balance between usability and security.
+
+4. **Separate Platform Owner from Super Admin** is essential for a white-label SaaS. The Platform Owner manages billing and activation but has NO access to tenant data — this is a legal requirement under GDPR and most privacy regulations.
+
+#### Risk Areas to Watch
+1. **Forgotten tenant filter**: The biggest risk in logical partitioning is a developer forgetting to add `tenantId` to a new query. I recommend: add a unit test that scans all repository methods and verifies every `findAll()` call has been replaced with a tenant-scoped equivalent.
+
+2. **Thread safety**: `TenantContext` uses `ThreadLocal`. If you ever move to reactive (WebFlux), you'll need to switch to `Context` propagation. For servlet-based Spring MVC (which you're using), `ThreadLocal` is perfect.
+
+3. **R2 bucket ACLs**: Never make the R2 bucket public. All access must go through pre-signed URLs generated by the backend. Set the bucket's default access to **Private**.
+
+#### Deployment Priority Order
+I recommend implementing in this exact order to minimize integration pain:
+1. MongoDB Atlas migration (Phase 6 first — get the DB working in the cloud)
+2. Schema changes + Tenant foundation (Phase 0)
+3. Auth changes + Registration flow (Phase 1)
+4. Cloudflare R2 (Phase 2)
+5. Platform Owner (Phase 3)
+6. Booking enhancements (Phase 4)
+7. Frontend changes (Phase 5)
+
+This order ensures each phase can be tested independently before building on top of it.
